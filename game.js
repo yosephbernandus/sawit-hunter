@@ -313,9 +313,8 @@ if (highScore > 0) {
 	highScoreStart.textContent = `High Score: ${highScore}`;
 }
 
-// Start game
-document.getElementById("playBtn").onclick = () => {
-	username = document.getElementById("usernameInput").value.trim() || "Player";
+// Reset game to initial state (reusable for Play and Play Again)
+function resetGame() {
 	score = 0;
 
 	// Stop menu music when starting game
@@ -334,7 +333,9 @@ document.getElementById("playBtn").onclick = () => {
 	sawit.caught = false;  // Reset caught flag
 	player.x = app.renderer.width / 2 - player.w / 2;
 
+	// Hide all screens, show game
 	startScreen.style.display = "none";
+	gameOverScreen.style.display = "none";
 	gameContainer.style.display = "flex";
 
 	updateUI();
@@ -349,6 +350,12 @@ document.getElementById("playBtn").onclick = () => {
 	} catch (e) {
 		// Ignore audio errors
 	}
+}
+
+// Start game
+document.getElementById("playBtn").onclick = () => {
+	username = document.getElementById("usernameInput").value.trim() || "Player";
+	resetGame();
 };
 
 // Handle window resize
@@ -672,19 +679,28 @@ document.addEventListener("click", startMenuMusic, { once: true });
 document.addEventListener("touchstart", startMenuMusic, { once: true });
 document.addEventListener("keydown", startMenuMusic, { once: true });
 
-// Handle Play Again button
+// Handle Play Again button - NO PAGE RELOAD! Assets already loaded
 document.getElementById("restartBtn").onclick = () => {
 	// Stop ending music
 	if (endingMusic) {
 		endingMusic.pause();
 		endingMusic.currentTime = 0;
 	}
-	// Reload page to restart game
-	location.reload();
-};
 
-// Also ensure menu music plays when returning to start screen
-// (when game over screen reloads the page, menu music will restart)
-window.addEventListener("load", () => {
-	// Menu music will start on first user interaction
-});
+	// Restart menu music
+	if (menuMusic) {
+		menuMusic.currentTime = 0;
+		menuMusic.volume = 0.6;
+		menuMusic.play().catch(() => {
+			// Autoplay blocked
+		});
+		menuMusicStarted = true;
+	}
+
+	// Show start screen again (not game over screen)
+	gameOverScreen.style.display = "none";
+	startScreen.style.display = "flex";
+
+	// Reset username input to current username
+	document.getElementById("usernameInput").value = username;
+};
