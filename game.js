@@ -9,6 +9,8 @@ const gameOverText = document.getElementById("gameOverText");
 const scoreSound = document.getElementById("scoreSound");
 const deathSound = document.getElementById("deathSound");
 const catchSound = document.getElementById("catchSound");
+const menuMusic = document.getElementById("menuMusic");
+const endingMusic = document.getElementById("endingMusic");
 
 // UI Elements
 const scoreDisplay = document.getElementById("scoreDisplay");
@@ -293,6 +295,12 @@ document.getElementById("playBtn").onclick = () => {
 	username = document.getElementById("usernameInput").value.trim() || "Player";
 	score = 0;
 
+	// Stop menu music when starting game
+	if (menuMusic) {
+		menuMusic.pause();
+		menuMusic.currentTime = 0;
+	}
+
 	// Resize canvas first to set proper dimensions
 	resizeCanvas();
 
@@ -404,7 +412,50 @@ function die() {
 	gameOverScreen.style.display = "flex";
 	gameOverText.textContent = `${username}, you missed a sawit!`;
 	finalScoreDisplay.textContent = score;
+
+	// Start ending music
+	if (endingMusic) {
+		endingMusic.currentTime = 0;
+		endingMusic.play().catch(() => {
+			// Handle autoplay restrictions
+		});
+	}
 }
 
 // Initialize canvas size
 resizeCanvas();
+
+// Start menu music when page loads (after user interaction)
+// Try to play on first user interaction to avoid autoplay restrictions
+let menuMusicStarted = false;
+function startMenuMusic() {
+	if (!menuMusicStarted && menuMusic) {
+		menuMusic.volume = 0.6; // Set volume to 60%
+		menuMusic.play().catch(() => {
+			// Autoplay blocked, will start on button click
+		});
+		menuMusicStarted = true;
+	}
+}
+
+// Start menu music on any user interaction
+document.addEventListener("click", startMenuMusic, { once: true });
+document.addEventListener("touchstart", startMenuMusic, { once: true });
+document.addEventListener("keydown", startMenuMusic, { once: true });
+
+// Handle Play Again button
+document.getElementById("restartBtn").onclick = () => {
+	// Stop ending music
+	if (endingMusic) {
+		endingMusic.pause();
+		endingMusic.currentTime = 0;
+	}
+	// Reload page to restart game
+	location.reload();
+};
+
+// Also ensure menu music plays when returning to start screen
+// (when game over screen reloads the page, menu music will restart)
+window.addEventListener("load", () => {
+	// Menu music will start on first user interaction
+});
