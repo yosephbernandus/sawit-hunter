@@ -42,34 +42,59 @@
     </div>
 
     <div id="gameContainer" class="game-container">
-      <div class="game-ui">
-        <div class="ui-left">
-          <div class="stat-box">
-            <div class="stat-label">PLAYER</div>
-            <div class="stat-value" id="playerName">---</div>
-          </div>
-        </div>
-        <div class="ui-center">
-          <div class="stat-box score-box">
-            <div class="stat-label">SCORE</div>
-            <div class="stat-value score-value" id="scoreDisplay">0</div>
-          </div>
-        </div>
-        <div class="ui-right">
-          <div class="stat-box">
-            <div class="stat-label">HIGH</div>
-            <div class="stat-value" id="highScore">0</div>
-          </div>
-        </div>
-      </div>
-      <div class="canvas-wrapper">
-        <canvas id="gameCanvas"></canvas>
-      </div>
-      <div class="mobile-controls">
-        <button class="control-btn" id="leftBtn">◀</button>
-        <button class="control-btn" id="rightBtn">▶</button>
-      </div>
-    </div>
+		<div class="game-ui">
+			<div class="ui-left">
+				<div class="stat-box">
+					<div class="stat-label">PLAYER</div>
+					<div class="stat-value" id="playerName">---</div>
+				</div>
+			</div>
+			<div class="ui-center">
+				<div class="stat-box score-box">
+					<div class="stat-label">SCORE</div>
+					<div class="stat-value score-value" id="scoreDisplay">0</div>
+				</div>
+			</div>
+			<div class="ui-right">
+				<div class="stat-box">
+					<div class="stat-label">HIGH</div>
+					<div class="stat-value" id="highScore">0</div>
+				</div>
+			</div>
+		</div>
+		<div class="game-main">
+			<div class="canvas-wrapper">
+				<canvas id="gameCanvas"></canvas>
+			</div>
+			<div class="controls-guide">
+				<div class="guide-title">CONTROLS</div>
+				<div class="guide-section">
+					<div class="guide-label">MOVE</div>
+					<div class="key-row">
+						<div class="key-group">
+							<div class="key-key">←</div>
+							<div class="key-key">→</div>
+						</div>
+						<div class="key-or">or</div>
+						<div class="key-group">
+							<div class="key-key">A</div>
+							<div class="key-key">D</div>
+						</div>
+					</div>
+				</div>
+				<div class="guide-section">
+					<div class="guide-label">DRAG</div>
+					<div class="key-row">
+						<div class="key-mouse">🖱️</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="mobile-controls">
+			<button class="control-btn" id="leftBtn">◀</button>
+			<button class="control-btn" id="rightBtn">▶</button>
+		</div>
+	</div>
 
     <div id="gameOverScreen" class="screen">
       <div class="game-over-content">
