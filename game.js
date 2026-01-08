@@ -9,6 +9,7 @@ const gameOverText = document.getElementById("gameOverText");
 const scoreSound = document.getElementById("scoreSound");
 const deathSound = document.getElementById("deathSound");
 const catchSound = document.getElementById("catchSound");
+const spawnSound = document.getElementById("spawnSound");
 const menuMusic = document.getElementById("menuMusic");
 const endingMusic = document.getElementById("endingMusic");
 
@@ -320,6 +321,9 @@ document.getElementById("playBtn").onclick = () => {
 
 	running = true;
 	gameLoop();
+
+	spawnSound.currentTime = 0;
+	spawnSound.play();
 };
 
 // Handle window resize
@@ -352,11 +356,15 @@ function update() {
 	if (collide(player, sawit)) {
 		catchSound.currentTime = 0;
 		catchSound.play();
+		spawnSound.pause();
+		spawnSound.currentTime = 0;
 		addScore(10);
 		resetSawit();
 	}
 
 	if (sawit.y > canvas.height) {
+		spawnSound.pause();
+		spawnSound.currentTime = 0;
 		die();
 	}
 }
@@ -396,6 +404,9 @@ function resetSawit() {
 	if (score >= 50) {
 		sawit.speed += 0.3;  // Faster increment after score 50
 	}
+
+	spawnSound.currentTime = 0;
+	spawnSound.play();
 }
 
 function collide(a, b) {
