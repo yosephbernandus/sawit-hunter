@@ -1,91 +1,125 @@
 <!DOCTYPE html>
 <html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Sawit Hunter 🌴</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-	<title>Sawit Hunter 🌴</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap"
-		rel="stylesheet">
-	<link rel="stylesheet" href="style.css" />
-</head>
+  <body>
+    <div class="stars"></div>
+    <div class="twinkling"></div>
 
-<body>
-	<div class="stars"></div>
-	<div class="twinkling"></div>
+    <div id="startScreen" class="screen">
+      <div class="game-title">
+        <span class="title-emoji">🌴</span>
+        <h1>SAWIT<br />HUNTER</h1>
+        <span class="title-emoji">🌴</span>
+      </div>
+      <div class="game-subtitle">Catch the falling palm fruits!</div>
+      <div class="input-container">
+        <input
+          id="usernameInput"
+          placeholder="Enter your name"
+          maxlength="15"
+        />
+      </div>
+      <button id="playBtn" class="game-btn">
+        <span class="btn-text">START GAME</span>
+        <span class="btn-icon">🎮</span>
+      </button>
+      <div class="high-score-display" id="highScoreDisplay"></div>
+    </div>
 
-	<div id="startScreen" class="screen">
-		<div class="game-title">
-			<span class="title-emoji">🌴</span>
-			<h1>SAWIT<br />HUNTER</h1>
-			<span class="title-emoji">🌴</span>
-		</div>
-		<div class="game-subtitle">Catch the falling palm fruits!</div>
-		<div class="input-container">
-			<input id="usernameInput" placeholder="Enter your name" maxlength="15" />
-		</div>
-		<button id="playBtn" class="game-btn">
-			<span class="btn-text">START GAME</span>
-			<span class="btn-icon">🎮</span>
-		</button>
-		<div class="high-score-display" id="highScoreDisplay"></div>
-	</div>
+    <div id="gameContainer" class="game-container">
+      <div class="game-ui">
+        <div class="ui-left">
+          <div class="stat-box">
+            <div class="stat-label">PLAYER</div>
+            <div class="stat-value" id="playerName">---</div>
+          </div>
+        </div>
+        <div class="ui-center">
+          <div class="stat-box score-box">
+            <div class="stat-label">SCORE</div>
+            <div class="stat-value score-value" id="scoreDisplay">0</div>
+          </div>
+        </div>
+        <div class="ui-right">
+          <div class="stat-box">
+            <div class="stat-label">HIGH</div>
+            <div class="stat-value" id="highScore">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+      <div class="mobile-controls">
+        <button class="control-btn" id="leftBtn">◀</button>
+        <button class="control-btn" id="rightBtn">▶</button>
+      </div>
+    </div>
 
-	<div id="gameContainer" class="game-container">
-		<div class="game-ui">
-			<div class="ui-left">
-				<div class="stat-box">
-					<div class="stat-label">PLAYER</div>
-					<div class="stat-value" id="playerName">---</div>
-				</div>
-			</div>
-			<div class="ui-center">
-				<div class="stat-box score-box">
-					<div class="stat-label">SCORE</div>
-					<div class="stat-value score-value" id="scoreDisplay">0</div>
-				</div>
-			</div>
-			<div class="ui-right">
-				<div class="stat-box">
-					<div class="stat-label">HIGH</div>
-					<div class="stat-value" id="highScore">0</div>
-				</div>
-			</div>
-		</div>
-		<div class="canvas-wrapper">
-			<canvas id="gameCanvas"></canvas>
-		</div>
-		<div class="mobile-controls">
-			<button class="control-btn" id="leftBtn">◀</button>
-			<button class="control-btn" id="rightBtn">▶</button>
-		</div>
-	</div>
+    <div id="gameOverScreen" class="screen">
+      <div class="game-over-content">
+        <h2 class="game-over-title">GAME OVER</h2>
+        <div id="gameOverText" class="game-over-message"></div>
+        <div class="final-score-box">
+          <div class="final-score-label">Final Score</div>
+          <div class="final-score-value" id="finalScore">0</div>
+        </div>
+        <button id="restartBtn" class="game-btn restart-btn">
+          <span class="btn-text">PLAY AGAIN</span>
+          <span class="btn-icon">🔄</span>
+        </button>
+        <div class="support-cta">
+          <p class="support-text">
+            Building projects like this is easy when you have access to
+            electricity and basic needs met. If you'd like to support, please
+            consider redirecting your support our brothers and sisters in Aceh.
+          </p>
+          <a
+            class="support-link"
+            href="https://kitabisa.com/campaign/tanggapbencanaaceh"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="link-text">Support Aceh via Kitabisa</span>
+            <span class="link-icon">❤️</span>
+          </a>
+        </div>
+      </div>
+    </div>
 
-	<div id="gameOverScreen" class="screen">
-		<div class="game-over-content">
-			<h2 class="game-over-title">GAME OVER</h2>
-			<div id="gameOverText" class="game-over-message"></div>
-			<div class="final-score-box">
-				<div class="final-score-label">Final Score</div>
-				<div class="final-score-value" id="finalScore">0</div>
-			</div>
-			<button id="restartBtn" class="game-btn restart-btn">
-				<span class="btn-text">PLAY AGAIN</span>
-				<span class="btn-icon">🔄</span>
-			</button>
-		</div>
-	</div>
+    <audio
+      id="scoreSound"
+      src="assets/sounds/hey-antek-antek-asing-prabowo.mp3"
+    ></audio>
+    <audio id="deathSound" src="assets/sounds/hidup-jokowi.mp3"></audio>
+    <audio id="catchSound" src="assets/sounds/jokowi-kaget.mp3"></audio>
+    <audio id="spawnSound" src="assets/sounds/solid.mp3"></audio>
+    <audio
+      id="menuMusic"
+      src="assets/sounds/selamat-berjuang-jokowi.mp3"
+      loop
+    ></audio>
+    <audio
+      id="endingMusic"
+      src="assets/sounds/penyanyi-solo-gatau-siapa.mp3"
+      loop
+    ></audio>
 
-	<audio id="scoreSound" src="assets/sounds/hey-antek-antek-asing-prabowo.mp3"></audio>
-	<audio id="deathSound" src="assets/sounds/hidup-jokowi.mp3"></audio>
-	<audio id="catchSound" src="assets/sounds/jokowi-kaget.mp3"></audio>
-	<audio id="spawnSound" src="assets/sounds/solid.mp3"></audio>
-	<audio id="menuMusic" src="assets/sounds/selamat-berjuang-jokowi.mp3" loop></audio>
-	<audio id="endingMusic" src="assets/sounds/penyanyi-solo-gatau-siapa.mp3" loop></audio>
-
-	<script src="game.js"></script>
-</body>
-
+    <script src="game.js"></script>
+  </body>
 </html>
