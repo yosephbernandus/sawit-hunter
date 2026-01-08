@@ -1,0 +1,13 @@
+{
+  "name": "sawit-hunter",
+  "private": true,
+  "scripts": {
+    "start": "bun --hot ./server.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
