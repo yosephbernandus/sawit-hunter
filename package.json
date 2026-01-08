@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "start": "bun --hot ./server.ts",
-    "build": "bun build game.js --outfile=dist/game.bundle.js --target=browser"
+    "build": "bun build game.js --outfile=dist/game.bundle.js --target=browser --external pixi.js"
   },
   "devDependencies": {
     "@types/bun": "latest"

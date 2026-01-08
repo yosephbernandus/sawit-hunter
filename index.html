@@ -29,9 +29,19 @@
     />
     <link rel="stylesheet" href="style.css" />
 
-    <!-- Preload critical game assets for faster loading -->
+    <!-- Preload PixiJS from CDN for faster loading -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/pixi.js@8.15.0/dist/pixi.min.js" as="script" crossorigin />
+
+    <!-- Preload critical assets for faster loading -->
+    <link rel="preload" href="dist/game.bundle.js" as="script" />
     <link rel="preload" href="assets/svgs/bucket.svg" as="image" />
     <link rel="preload" href="assets/svgs/sawit.svg" as="image" />
+    <link rel="preload" href="assets/sounds/jokowi-kaget.mp3" as="audio" />
+    <link rel="preload" href="assets/sounds/solid.mp3" as="audio" />
+    <link rel="preload" href="assets/sounds/selamat-berjuang-jokowi.mp3" as="audio" />
+
+    <!-- Load PixiJS from CDN (cached globally, parallel with page load) -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.15.0/dist/pixi.min.js" crossorigin></script>
   </head>
 
   <body>

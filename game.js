@@ -1,4 +1,5 @@
-import { Application, Assets, Sprite, Container, Graphics } from 'pixi.js';
+// PixiJS loaded from CDN - available as global PIXI object
+const { Application, Assets, Sprite, Container, Graphics } = PIXI;
 
 const canvas = document.getElementById("gameCanvas");
 
