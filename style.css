@@ -452,6 +452,65 @@ canvas {
   50% { transform: translateY(-10px); }
 }
 
+.support-cta {
+  margin: 32px auto 0;
+  padding: 18px 20px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.85), rgba(10, 46, 26, 0.75));
+  border: 3px solid var(--accent-green);
+  border-radius: 18px;
+  box-shadow:
+    0 0 20px var(--glow-green),
+    inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.support-text {
+  font-size: clamp(14px, 2.7vw, 18px);
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-weight: 700;
+  color: var(--text-light);
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--accent-orange), var(--accent-green));
+  border: 3px solid var(--accent-orange);
+  border-radius: 14px;
+  box-shadow:
+    0 0 16px var(--glow-orange),
+    0 6px 0 var(--bg-dark);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.support-link:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 24px var(--glow-orange),
+    0 9px 0 var(--bg-dark);
+}
+
+.support-link:active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 16px var(--glow-orange),
+    0 4px 0 var(--bg-dark);
+}
+
+.link-icon {
+  font-size: 18px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .game-ui {
