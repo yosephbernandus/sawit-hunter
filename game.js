@@ -113,7 +113,8 @@ let sawit = {
 	x: Math.random() * 760,
 	y: -40,
 	size: 40,
-	speed: 2.5  // Start slow for all devices
+	speed: 2.5,  // Start slow for all devices
+	caught: false  // Flag to prevent multiple collision detections
 };
 
 // Controls
@@ -312,6 +313,7 @@ document.getElementById("playBtn").onclick = () => {
 	sawit.speed = 2.5;  // Start slow for all devices
 	sawit.y = -40;
 	sawit.x = Math.random() * (canvas.width - sawit.size);
+	sawit.caught = false;  // Reset caught flag
 	player.x = canvas.width / 2 - player.w / 2;
 
 	startScreen.style.display = "none";
@@ -322,8 +324,13 @@ document.getElementById("playBtn").onclick = () => {
 	running = true;
 	gameLoop();
 
-	spawnSound.currentTime = 0;
-	spawnSound.play();
+	// Play spawn sound for first sawit
+	try {
+		spawnSound.currentTime = 0;
+		spawnSound.play();
+	} catch (e) {
+		// Ignore audio errors
+	}
 };
 
 // Handle window resize
@@ -353,18 +360,30 @@ function update() {
 
 	sawit.y += sawit.speed;
 
-	if (collide(player, sawit)) {
-		catchSound.currentTime = 0;
-		catchSound.play();
-		spawnSound.pause();
-		spawnSound.currentTime = 0;
+	// Only check collision if sawit hasn't been caught yet
+	if (!sawit.caught && collide(player, sawit)) {
+		sawit.caught = true;  // Mark as caught immediately to prevent multiple detections
+
+		// Play catch sound
+		try {
+			catchSound.currentTime = 0;
+			catchSound.play();
+		} catch (e) {
+			// Ignore audio errors
+		}
+
 		addScore(10);
-		resetSawit();
+		resetSawit();  // Reset immediately
 	}
 
-	if (sawit.y > canvas.height) {
-		spawnSound.pause();
-		spawnSound.currentTime = 0;
+	// Only trigger game over if sawit passed the bottom and wasn't caught
+	if (!sawit.caught && sawit.y > canvas.height) {
+		try {
+			spawnSound.pause();
+			spawnSound.currentTime = 0;
+		} catch (e) {
+			// Ignore audio errors
+		}
 		die();
 	}
 }
@@ -372,7 +391,10 @@ function update() {
 function draw() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+	// Draw bucket
 	ctx.drawImage(bucketImg, player.x, player.y, player.w, player.h);
+
+	// Draw sawit
 	ctx.drawImage(sawitImg, sawit.x, sawit.y, sawit.size, sawit.size);
 }
 
@@ -391,22 +413,32 @@ function addScore(amount) {
 
 	// sound ONLY once per 100
 	if (Math.floor(prev / 100) !== Math.floor(score / 100)) {
-		scoreSound.currentTime = 0;
-		scoreSound.play();
+		try {
+			scoreSound.currentTime = 0;
+			scoreSound.play();
+		} catch (e) {
+			// Ignore audio errors
+		}
 	}
 }
 
 function resetSawit() {
 	sawit.x = Math.random() * (canvas.width - sawit.size);
 	sawit.y = -40;
+	sawit.caught = false;  // Reset caught flag for new sawit
 
 	// Only increase speed after score reaches 50, then increment faster
 	if (score >= 50) {
 		sawit.speed += 0.3;  // Faster increment after score 50
 	}
 
-	spawnSound.currentTime = 0;
-	spawnSound.play();
+	// Play spawn sound
+	try {
+		spawnSound.currentTime = 0;
+		spawnSound.play();
+	} catch (e) {
+		// Ignore audio errors
+	}
 }
 
 function collide(a, b) {
@@ -420,7 +452,13 @@ function collide(a, b) {
 
 function die() {
 	running = false;
-	deathSound.play();
+
+	// Play death sound
+	try {
+		deathSound.play();
+	} catch (e) {
+		// Ignore audio errors
+	}
 
 	gameContainer.style.display = "none";
 	gameOverScreen.style.display = "flex";
