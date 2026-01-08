@@ -1,5 +1,15 @@
 {
   "buildCommand": "bun install && bun run build",
   "outputDirectory": ".",
-  "installCommand": "bun install"
+  "installCommand": "bun install",
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 }
