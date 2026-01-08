@@ -2,7 +2,8 @@
   "name": "sawit-hunter",
   "private": true,
   "scripts": {
-    "start": "bun --hot ./server.ts"
+    "start": "bun --hot ./server.ts",
+    "build": "bun build game.js --outfile=dist/game.bundle.js --target=browser"
   },
   "devDependencies": {
     "@types/bun": "latest"
