@@ -6,6 +6,7 @@ function getMimeType(pathname: string): string {
   if (pathname.endsWith(".css")) return "text/css";
   if (pathname.endsWith(".js")) return "application/javascript";
   if (pathname.endsWith(".svg")) return "image/svg+xml";
+  if (pathname.endsWith(".png")) return "image/png";
   if (pathname.endsWith(".mp3")) return "audio/mpeg";
   return "application/octet-stream";
 }
