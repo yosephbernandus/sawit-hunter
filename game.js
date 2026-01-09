@@ -35,6 +35,7 @@ let highScore = Number(localStorage.getItem("highScore")) || 0;
 let app;
 let bucketSprite;
 let sawitSprite;
+let snakeSprite;
 let particleContainer;
 
 // Detect if mobile device
@@ -135,6 +136,11 @@ let sawit = {
 	speed: 2.5,  // Start slow for all devices
 	caught: false  // Flag to prevent multiple collision detections
 };
+
+// Snake
+let snake = null;
+let snakeSpawnTimer = 0;
+const SNAKE_SPAWN_INTERVAL = 5000; // 5 seconds in milliseconds
 
 // Controls
 const keys = {};
@@ -314,6 +320,32 @@ if (highScore > 0) {
 	highScoreStart.textContent = `High Score: ${highScore}`;
 }
 
+// Spawn snake when score >= 100 (every 5 seconds)
+function spawnSnake() {
+	if (!snake && app.snakeTexture) {
+		// Snake spawns near sawit position, but not overlapping
+		const snakeSize = 50;
+		const snakeX = Math.max(0, Math.min(sawit.x + (Math.random() - 0.5) * 100, app.renderer.width - snakeSize));
+		
+		snake = {
+			x: snakeX,
+			y: -50,
+			size: snakeSize,
+			speed: 4  // Faster than sawit (sawit is 2.5)
+		};
+
+		// Create sprite for snake
+		snakeSprite = new Sprite(app.snakeTexture);
+		snakeSprite.x = snake.x;
+		snakeSprite.y = snake.y;
+		snakeSprite.width = snake.size;
+		snakeSprite.height = snake.size;
+
+		// Add snake sprite to stage (add before sawit so it renders behind)
+		app.stage.addChildAt(snakeSprite, app.stage.getChildIndex(sawitSprite));
+	}
+}
+
 // Reset game to initial state (reusable for Play and Play Again)
 function resetGame() {
 	score = 0;
@@ -323,6 +355,14 @@ function resetGame() {
 		menuMusic.pause();
 		menuMusic.currentTime = 0;
 	}
+
+	// Remove any existing snake sprite from stage
+	if (snakeSprite && app.stage.children.includes(snakeSprite)) {
+		app.stage.removeChild(snakeSprite);
+	}
+	snakeSprite = null;
+	snake = null;
+	snakeSpawnTimer = 0;
 
 	// Resize canvas first to set proper dimensions
 	resizeCanvas();
@@ -392,6 +432,35 @@ function update() {
 
 	sawit.y += sawit.speed;
 
+	// Handle snake spawning (every 5 seconds after score reaches 100)
+	if (score >= 100) {
+		snakeSpawnTimer += 16; // ~60fps
+		if (snakeSpawnTimer >= SNAKE_SPAWN_INTERVAL && !snake) {
+			spawnSnake();
+			snakeSpawnTimer = 0;
+		}
+	}
+
+	// Update snake position if it exists
+	if (snake) {
+		snake.y += snake.speed;
+
+		// Check collision with bucket - snake collision = game over
+		if (collide(player, snake)) {
+			die(`${username}, you hit a snake!`);
+			return;
+		}
+
+		// Remove snake if it goes off screen
+		if (snake.y > app.renderer.height) {
+			if (snakeSprite && app.stage.children.includes(snakeSprite)) {
+				app.stage.removeChild(snakeSprite);
+			}
+			snakeSprite = null;
+			snake = null;
+		}
+	}
+
 	// Only check collision if sawit hasn't been caught yet
 	if (!sawit.caught && collide(player, sawit)) {
 		sawit.caught = true;  // Mark as caught immediately to prevent multiple detections
@@ -437,6 +506,13 @@ function draw() {
 		sawitSprite.y = sawit.y;
 		sawitSprite.width = sawit.size;
 		sawitSprite.height = sawit.size;
+	}
+
+	if (snakeSprite && snake) {
+		snakeSprite.x = snake.x;
+		snakeSprite.y = snake.y;
+		snakeSprite.width = snake.size;
+		snakeSprite.height = snake.size;
 	}
 
 	// PixiJS automatically renders the scene via WebGL!
@@ -550,7 +626,7 @@ function collide(a, b) {
 	);
 }
 
-function die() {
+function die(customMessage = null) {
 	running = false;
 
 	// Play death sound
@@ -562,7 +638,7 @@ function die() {
 
 	gameContainer.style.display = "none";
 	gameOverScreen.style.display = "flex";
-	gameOverText.textContent = `${username}, you missed a sawit!`;
+	gameOverText.textContent = customMessage || `${username}, you missed a sawit!`;
 	finalScoreDisplay.textContent = score;
 
 	// Start ending music
@@ -609,10 +685,11 @@ async function initPixi() {
 
 		updateLoadingProgress(30, 'Loading game assets...');
 
-		// ✅ PARALLEL LOADING - Load both textures at once!
-		const [bucketTexture, sawitTexture] = await Promise.all([
+		// ✅ PARALLEL LOADING - Load all textures at once!
+		const [bucketTexture, sawitTexture, snakeTexture] = await Promise.all([
 			Assets.load('assets/svgs/bucket.svg'),
-			Assets.load('assets/png/sawit-new.webp')
+			Assets.load('assets/png/sawit-new.webp'),
+			Assets.load('assets/png/snake.png')
 		]);
 
 		updateLoadingProgress(70, 'Creating sprites...');
@@ -629,6 +706,9 @@ async function initPixi() {
 		sawitSprite.y = sawit.y;
 		sawitSprite.width = sawit.size;
 		sawitSprite.height = sawit.size;
+
+		// Store snake texture for later creation
+		app.snakeTexture = snakeTexture;
 
 		// Create particle container
 		particleContainer = new Container();
