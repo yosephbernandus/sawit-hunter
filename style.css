@@ -330,9 +330,33 @@ input:focus {
   align-items: center;
 }
 
+.canvas-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.canvas-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  background: url(assets/png/sawit-tree-farm.webp) center center / cover no-repeat;
+  border-radius: 15px;
+  opacity: 0.3;
+  filter: blur(2px);
+  z-index: 0;
+  pointer-events: none;
+}
+
 canvas {
   display: block;
-  background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 100%);
+  background: transparent;
   border: 5px solid var(--accent-orange);
   border-radius: 20px;
   box-shadow:
@@ -341,6 +365,8 @@ canvas {
     0 10px 40px rgba(0, 0, 0, 0.5);
   max-width: 100%;
   height: auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* Controls Guide */

@@ -374,7 +374,7 @@ function gameLoop() {
 }
 
 function update() {
-	const speedMultiplier = keys["Alt"] ? 2.0 : 1.0;
+	const speedMultiplier = keys["Shift"] ? 2.0 : 1.0;
 
 	// Keyboard controls
 	if (keys["ArrowLeft"] || keys["a"] || keys["A"]) player.x -= player.speed * speedMultiplier;
@@ -384,7 +384,11 @@ function update() {
 	if (leftPressed) player.x -= player.speed;
 	if (rightPressed) player.x += player.speed;
 
-	player.x = Math.max(0, Math.min(app.renderer.width - player.w, player.x));
+	if (player.x > app.renderer.width - player.w) {
+		player.x = 0;
+	} else if (player.x < 0) {
+		player.x = app.renderer.width - player.w;
+	}
 
 	sawit.y += sawit.speed;
 
@@ -595,6 +599,7 @@ async function initPixi() {
 		await app.init({
 			canvas: canvas,
 			background: 'transparent',
+			backgroundAlpha: 0,
 			antialias: true,
 			resolution: window.devicePixelRatio || 1,
 			autoDensity: true,
@@ -607,7 +612,7 @@ async function initPixi() {
 		// ✅ PARALLEL LOADING - Load both textures at once!
 		const [bucketTexture, sawitTexture] = await Promise.all([
 			Assets.load('assets/svgs/bucket.svg'),
-			Assets.load('assets/png/sawit-new.png')
+			Assets.load('assets/png/sawit-new.webp')
 		]);
 
 		updateLoadingProgress(70, 'Creating sprites...');
