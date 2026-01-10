@@ -1,30 +1,11 @@
 // PixiJS loaded from CDN - available as global PIXI object
 const { Application, Assets, Sprite, Container, Graphics } = PIXI;
 
-const canvas = document.getElementById("gameCanvas");
-
-const startScreen = document.getElementById("startScreen");
-const gameContainer = document.getElementById("gameContainer");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const gameOverText = document.getElementById("gameOverText");
-
-const scoreSound = document.getElementById("scoreSound");
-const deathSound = document.getElementById("deathSound");
-const catchSound = document.getElementById("catchSound");
-const spawnSound = document.getElementById("spawnSound");
-const menuMusic = document.getElementById("menuMusic");
-const endingMusic = document.getElementById("endingMusic");
-
-// UI Elements
-const scoreDisplay = document.getElementById("scoreDisplay");
-const playerNameDisplay = document.getElementById("playerName");
-const highScoreDisplay = document.getElementById("highScore");
-const highScoreStart = document.getElementById("highScoreDisplay");
-const finalScoreDisplay = document.getElementById("finalScore");
-
-// Mobile controls
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
+// Wait for DOM to be fully loaded before accessing elements
+let canvas, startScreen, gameContainer, gameOverScreen, gameOverText;
+let scoreSound, deathSound, catchSound, spawnSound, menuMusic, endingMusic;
+let scoreDisplay, playerNameDisplay, highScoreDisplay, highScoreStart, finalScoreDisplay;
+let leftBtn, rightBtn;
 
 let username = "";
 let running = false;
@@ -144,14 +125,90 @@ const SNAKE_SPAWN_INTERVAL = 5000; // 5 seconds in milliseconds
 
 // Controls
 const keys = {};
-window.addEventListener("keydown", e => keys[e.key] = true);
-window.addEventListener("keyup", e => keys[e.key] = false);
+
+// Initialize DOM-dependent code after DOM is loaded
+function initializeGame() {
+	// Get all DOM elements
+	canvas = document.getElementById("gameCanvas");
+	startScreen = document.getElementById("startScreen");
+	gameContainer = document.getElementById("gameContainer");
+	gameOverScreen = document.getElementById("gameOverScreen");
+	gameOverText = document.getElementById("gameOverText");
+
+	scoreSound = document.getElementById("scoreSound");
+	deathSound = document.getElementById("deathSound");
+	catchSound = document.getElementById("catchSound");
+	spawnSound = document.getElementById("spawnSound");
+	menuMusic = document.getElementById("menuMusic");
+	endingMusic = document.getElementById("endingMusic");
+
+	scoreDisplay = document.getElementById("scoreDisplay");
+	playerNameDisplay = document.getElementById("playerName");
+	highScoreDisplay = document.getElementById("highScore");
+	highScoreStart = document.getElementById("highScoreDisplay");
+	finalScoreDisplay = document.getElementById("finalScore");
+
+	leftBtn = document.getElementById("leftBtn");
+	rightBtn = document.getElementById("rightBtn");
+
+	// Display high score on start screen
+	if (highScore > 0) {
+		highScoreStart.textContent = `High Score: ${highScore}`;
+	}
+
+	// Set up keyboard controls
+	window.addEventListener("keydown", e => keys[e.key] = true);
+	window.addEventListener("keyup", e => keys[e.key] = false);
+
+	// Set up mobile and mouse controls
+	setupControls();
+
+	// Set up button handlers
+	document.getElementById("playBtn").onclick = () => {
+		username = document.getElementById("usernameInput").value.trim() || "Player";
+		resetGame();
+	};
+
+	document.getElementById("restartBtn").onclick = () => {
+		// Stop ending music
+		if (endingMusic) {
+			endingMusic.pause();
+			endingMusic.currentTime = 0;
+		}
+
+		// Restart menu music
+		if (menuMusic) {
+			menuMusic.currentTime = 0;
+			menuMusic.volume = 0.6;
+			menuMusic.play().catch(() => {
+				// Autoplay blocked
+			});
+			menuMusicStarted = true;
+		}
+
+		// Show start screen again (not game over screen)
+		gameOverScreen.style.display = "none";
+		startScreen.style.display = "flex";
+
+		// Reset username input to current username
+		document.getElementById("usernameInput").value = username;
+	};
+
+	// Start initialization
+	initPixi().catch(console.error);
+
+	// Fallback: Start menu music on any user interaction (if autoplay blocked)
+	document.addEventListener("click", startMenuMusic, { once: true });
+	document.addEventListener("touchstart", startMenuMusic, { once: true });
+	document.addEventListener("keydown", startMenuMusic, { once: true });
+}
 
 // Mobile touch controls - Button based
 let leftPressed = false;
 let rightPressed = false;
 
-leftBtn.addEventListener("touchstart", (e) => {
+function setupControls() {
+	leftBtn.addEventListener("touchstart", (e) => {
 	e.preventDefault();
 	leftPressed = true;
 });
@@ -307,17 +364,13 @@ canvas.addEventListener("mouseleave", () => {
 	isMouseDragging = false;
 	canvas.style.cursor = 'default';
 });
+}  // End of setupControls()
 
 // Update UI
 function updateUI() {
 	scoreDisplay.textContent = score;
 	playerNameDisplay.textContent = username;
 	highScoreDisplay.textContent = highScore;
-}
-
-// Display high score on start screen
-if (highScore > 0) {
-	highScoreStart.textContent = `High Score: ${highScore}`;
 }
 
 // Spawn snake when score >= 100 (every 5 seconds)
@@ -392,12 +445,6 @@ function resetGame() {
 		// Ignore audio errors
 	}
 }
-
-// Start game
-document.getElementById("playBtn").onclick = () => {
-	username = document.getElementById("usernameInput").value.trim() || "Player";
-	resetGame();
-};
 
 // Handle window resize
 window.addEventListener("resize", () => {
@@ -748,9 +795,6 @@ async function initPixi() {
 	}
 }
 
-// Initialize PixiJS and start
-initPixi().catch(console.error);
-
 // Fallback: Start menu music on user interaction if autoplay was blocked
 function startMenuMusic() {
 	if (!menuMusicStarted && menuMusic) {
@@ -763,33 +807,10 @@ function startMenuMusic() {
 	}
 }
 
-// Fallback: Start menu music on any user interaction (if autoplay blocked)
-document.addEventListener("click", startMenuMusic, { once: true });
-document.addEventListener("touchstart", startMenuMusic, { once: true });
-document.addEventListener("keydown", startMenuMusic, { once: true });
-
-// Handle Play Again button - NO PAGE RELOAD! Assets already loaded
-document.getElementById("restartBtn").onclick = () => {
-	// Stop ending music
-	if (endingMusic) {
-		endingMusic.pause();
-		endingMusic.currentTime = 0;
-	}
-
-	// Restart menu music
-	if (menuMusic) {
-		menuMusic.currentTime = 0;
-		menuMusic.volume = 0.6;
-		menuMusic.play().catch(() => {
-			// Autoplay blocked
-		});
-		menuMusicStarted = true;
-	}
-
-	// Show start screen again (not game over screen)
-	gameOverScreen.style.display = "none";
-	startScreen.style.display = "flex";
-
-	// Reset username input to current username
-	document.getElementById("usernameInput").value = username;
-};
+// Start initialization when DOM is ready
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+	// DOM already loaded
+	initializeGame();
+}
