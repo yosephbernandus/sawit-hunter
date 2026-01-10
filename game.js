@@ -12,6 +12,10 @@ let running = false;
 let score = 0;
 let highScore = Number(localStorage.getItem("highScore")) || 0;
 
+// Delta time tracking (same concept as your C++ implementation)
+let lastTime = 0;
+let deltaTime = 0;
+
 // PixiJS Application
 let app;
 let bucketSprite;
@@ -101,12 +105,13 @@ function resizeCanvas() {
 }
 
 // Player (Bucket) - initial values, will be adjusted by resizeCanvas()
+// Speeds are now in pixels per SECOND (not per frame)
 let player = {
 	x: 360,
 	y: 380,
 	w: 80,
 	h: 50,
-	speed: isMobileDevice() ? 10 : 8 // Faster movement on mobile for better control
+	speed: isMobileDevice() ? 600 : 480 // pixels/second (was 10*60 and 8*60)
 };
 
 // Sawit
@@ -114,14 +119,14 @@ let sawit = {
 	x: Math.random() * 760,
 	y: -40,
 	size: 40,
-	speed: 2.5,  // Start slow for all devices
+	speed: 150,  // pixels/second (was 2.5*60)
 	caught: false  // Flag to prevent multiple collision detections
 };
 
 // Snake
 let snake = null;
 let snakeSpawnTimer = 0;
-const SNAKE_SPAWN_INTERVAL = 5000; // 5 seconds in milliseconds
+const SNAKE_SPAWN_INTERVAL = 5.0; // 5 seconds (in actual seconds, not frames)
 
 // Controls
 const keys = {};
@@ -379,12 +384,12 @@ function spawnSnake() {
 		// Snake spawns near sawit position, but not overlapping
 		const snakeSize = 50;
 		const snakeX = Math.max(0, Math.min(sawit.x + (Math.random() - 0.5) * 100, app.renderer.width - snakeSize));
-		
+
 		snake = {
 			x: snakeX,
 			y: -50,
 			size: snakeSize,
-			speed: 4  // Faster than sawit (sawit is 2.5)
+			speed: 240  // pixels/second (faster than sawit which is 150)
 		};
 
 		// Create sprite for snake
@@ -402,6 +407,10 @@ function spawnSnake() {
 // Reset game to initial state (reusable for Play and Play Again)
 function resetGame() {
 	score = 0;
+
+	// Reset delta time tracking
+	lastTime = 0;
+	deltaTime = 0;
 
 	// Stop menu music when starting game
 	if (menuMusic) {
@@ -421,7 +430,7 @@ function resetGame() {
 	resizeCanvas();
 
 	// Reset game state with proper canvas dimensions
-	sawit.speed = 2.5;  // Start slow for all devices
+	sawit.speed = 150;  // pixels/second - Start slow for all devices
 	sawit.y = -40;
 	sawit.x = Math.random() * (app.renderer.width - sawit.size);
 	sawit.caught = false;  // Reset caught flag
@@ -453,8 +462,17 @@ window.addEventListener("resize", () => {
 	}
 });
 
-function gameLoop() {
+function gameLoop(currentTime = 0) {
 	if (!running) return;
+
+	// Calculate delta time (same as your C++ implementation)
+	// deltaTime = (SDL_GetTicks() - millisecsPreviousFrame) / 1000.0f
+	if (lastTime === 0) {
+		lastTime = currentTime;
+	}
+	deltaTime = (currentTime - lastTime) / 1000.0; // Convert ms to seconds
+	lastTime = currentTime;
+
 	update();
 	draw();
 	requestAnimationFrame(gameLoop);
@@ -463,13 +481,13 @@ function gameLoop() {
 function update() {
 	const speedMultiplier = keys["Shift"] ? 2.0 : 1.0;
 
-	// Keyboard controls
-	if (keys["ArrowLeft"] || keys["a"] || keys["A"]) player.x -= player.speed * speedMultiplier;
-	if (keys["ArrowRight"] || keys["d"] || keys["D"]) player.x += player.speed * speedMultiplier;
+	// Keyboard controls (multiply by deltaTime for frame-rate independence)
+	if (keys["ArrowLeft"] || keys["a"] || keys["A"]) player.x -= player.speed * speedMultiplier * deltaTime;
+	if (keys["ArrowRight"] || keys["d"] || keys["D"]) player.x += player.speed * speedMultiplier * deltaTime;
 
-	// Mobile/Touch controls
-	if (leftPressed) player.x -= player.speed;
-	if (rightPressed) player.x += player.speed;
+	// Mobile/Touch controls (multiply by deltaTime)
+	if (leftPressed) player.x -= player.speed * deltaTime;
+	if (rightPressed) player.x += player.speed * deltaTime;
 
 	if (player.x > app.renderer.width - player.w) {
 		player.x = 0;
@@ -477,20 +495,21 @@ function update() {
 		player.x = app.renderer.width - player.w;
 	}
 
-	sawit.y += sawit.speed;
+	// Sawit movement (frame-rate independent)
+	sawit.y += sawit.speed * deltaTime;
 
 	// Handle snake spawning (every 5 seconds after score reaches 100)
 	if (score >= 100) {
-		snakeSpawnTimer += 16; // ~60fps
+		snakeSpawnTimer += deltaTime; // Add actual elapsed time in seconds
 		if (snakeSpawnTimer >= SNAKE_SPAWN_INTERVAL && !snake) {
 			spawnSnake();
 			snakeSpawnTimer = 0;
 		}
 	}
 
-	// Update snake position if it exists
+	// Update snake position if it exists (frame-rate independent)
 	if (snake) {
-		snake.y += snake.speed;
+		snake.y += snake.speed * deltaTime;
 
 		// Check collision with bucket - snake collision = game over
 		if (collide(player, snake)) {
@@ -650,9 +669,10 @@ function resetSawit() {
 	sawit.y = -40;
 	sawit.caught = false;  // Reset caught flag for new sawit
 
-	// Only increase speed after score reaches 50, then increment faster
+	// Only increase speed after score reaches 50
+	// Speed is in pixels/second, so increase by 18 (0.3*60 converted)
 	if (score >= 50) {
-		sawit.speed += 0.3;  // Faster increment after score 50
+		sawit.speed += 18;
 	}
 
 	// Play spawn sound
