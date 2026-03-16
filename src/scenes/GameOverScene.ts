@@ -1,8 +1,14 @@
 import type { GameScene as IGameScene } from '../core/SceneManager.ts';
+import type { AudioManager } from '../audio/AudioManager.ts';
 
 export class GameOverScene implements IGameScene {
   private score = 0;
   private distance = 0;
+  private audio: AudioManager;
+
+  constructor(audio: AudioManager) {
+    this.audio = audio;
+  }
 
   setResults(score: number, distance: number): void {
     this.score = score;
@@ -18,18 +24,20 @@ export class GameOverScene implements IGameScene {
     document.getElementById('gameOverText')!.textContent =
       `You ran ${Math.floor(this.distance)}m!`;
 
-    // Update high score
+    // High score
     const prev = parseInt(localStorage.getItem('sawitRunnerHighScore') ?? '0', 10);
     if (this.score > prev) {
       localStorage.setItem('sawitRunnerHighScore', String(this.score));
     }
+
+    // Play game over music
+    this.audio.playMusic('gameOver');
   }
 
-  update(_dt: number): void {
-    // Static screen, nothing to update
-  }
+  update(_dt: number): void {}
 
   exit(): void {
     document.getElementById('gameOverScreen')?.classList.add('hidden');
+    this.audio.stopMusic();
   }
 }

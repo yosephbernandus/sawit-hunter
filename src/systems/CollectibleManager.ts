@@ -1,25 +1,31 @@
 import * as THREE from 'three';
 import { createSawitFruit } from '../rendering/ModelFactory.ts';
 import { ObjectPool } from '../utils/ObjectPool.ts';
-import { randomInt } from '../utils/MathUtils.ts';
+import { randomInt, randomChoice } from '../utils/MathUtils.ts';
 import {
   LANE_POSITIONS,
   SAWIT_SPAWN_INTERVAL,
   SAWIT_Y,
   GOLDEN_SAWIT_CHANCE,
+  POWERUP_CHANCE,
 } from '../core/Constants.ts';
+import { getMaterials } from '../rendering/MaterialLibrary.ts';
+import type { PowerUpType } from './PowerUpSystem.ts';
 
 export interface ActiveCollectible {
   mesh: THREE.Group;
   lane: number;
   golden: boolean;
+  powerUp: PowerUpType | null;
 }
+
+const POWERUP_TYPES: PowerUpType[] = ['shield', 'magnet', 'bigBucket'];
 
 export class CollectibleManager {
   private scene: THREE.Scene;
   private active: ActiveCollectible[] = [];
   private spawnTimer = 0;
-  private spawnAheadZ = -60; // how far ahead to spawn
+  private spawnAheadZ = -60;
 
   private pool = new ObjectPool<THREE.Group>(
     () => createSawitFruit(false),
@@ -47,8 +53,12 @@ export class CollectibleManager {
     // Move collectibles toward player
     for (const c of this.active) {
       c.mesh.position.z += speed * dt;
-      // Gentle rotation
       c.mesh.rotation.y += dt * 2;
+
+      // Power-up items bob up and down
+      if (c.powerUp) {
+        c.mesh.position.y = SAWIT_Y + Math.sin(performance.now() * 0.004) * 0.3;
+      }
     }
 
     // Remove collectibles that passed behind player
@@ -63,8 +73,23 @@ export class CollectibleManager {
 
   private spawn(playerZ: number): void {
     const lane = randomInt(0, 2);
-    const golden = Math.random() < GOLDEN_SAWIT_CHANCE;
-    const mesh = golden ? this.goldenPool.acquire() : this.pool.acquire();
+    const roll = Math.random();
+
+    let golden = false;
+    let powerUp: PowerUpType | null = null;
+    let mesh: THREE.Group;
+
+    if (roll < POWERUP_CHANCE) {
+      // Spawn power-up (uses golden mesh with different scale as visual indicator)
+      powerUp = randomChoice(POWERUP_TYPES);
+      mesh = this.goldenPool.acquire();
+      mesh.scale.set(1.3, 1.3, 1.3); // slightly bigger to stand out
+    } else if (roll < POWERUP_CHANCE + GOLDEN_SAWIT_CHANCE) {
+      golden = true;
+      mesh = this.goldenPool.acquire();
+    } else {
+      mesh = this.pool.acquire();
+    }
 
     mesh.position.set(
       LANE_POSITIONS[lane]!,
@@ -74,13 +99,13 @@ export class CollectibleManager {
     mesh.userData['gameObject'] = true;
 
     this.scene.add(mesh);
-    this.active.push({ mesh, lane, golden });
+    this.active.push({ mesh, lane, golden, powerUp });
   }
 
   private release(c: ActiveCollectible): void {
     this.scene.remove(c.mesh);
     c.mesh.visible = false;
-    if (c.golden) {
+    if (c.golden || c.powerUp) {
       this.goldenPool.release(c.mesh);
     } else {
       this.pool.release(c.mesh);

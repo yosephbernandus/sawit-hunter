@@ -1,11 +1,11 @@
 import type { PlayerController } from './PlayerController.ts';
 import type { CollectibleManager, ActiveCollectible } from './CollectibleManager.ts';
-import type { ObstacleManager, ActiveObstacle } from './ObstacleManager.ts';
+import type { ObstacleManager } from './ObstacleManager.ts';
 import type { EventBus } from '../core/EventBus.ts';
 import { SAWIT_POINTS, GOLDEN_SAWIT_POINTS } from '../core/Constants.ts';
 
-// Simple lane + Z proximity collision
 const COLLECT_Z_RANGE = 1.8;
+const COLLECT_X_RANGE = 1.5;
 const OBSTACLE_Z_RANGE = 1.5;
 
 export class CollisionSystem {
@@ -14,6 +14,7 @@ export class CollisionSystem {
   private obstacles: ObstacleManager;
   private eventBus: EventBus;
   private shielded = false;
+  private collectXMultiplier = 1; // for big bucket
 
   constructor(
     player: PlayerController,
@@ -31,44 +32,57 @@ export class CollisionSystem {
     this.shielded = val;
   }
 
+  setCollectXMultiplier(val: number): void {
+    this.collectXMultiplier = val;
+  }
+
   update(): void {
+    const playerX = this.player.mesh.position.x;
     const playerZ = this.player.mesh.position.z;
     const playerLane = this.player.lane;
+    const xRange = COLLECT_X_RANGE * this.collectXMultiplier;
 
-    // Check collectible collisions
+    // Collectible collisions
     const caught: ActiveCollectible[] = [];
     for (const c of this.collectibles.getActive()) {
       const dz = Math.abs(c.mesh.position.z - playerZ);
-      if (c.lane === playerLane && dz < COLLECT_Z_RANGE) {
+      const dx = Math.abs(c.mesh.position.x - playerX);
+
+      if (dz < COLLECT_Z_RANGE && dx < xRange) {
         caught.push(c);
       }
     }
     for (const c of caught) {
-      const points = c.golden ? GOLDEN_SAWIT_POINTS : SAWIT_POINTS;
-      this.eventBus.emit('SAWIT_CAUGHT', {
-        points,
-        position: c.mesh.position.clone(),
-      });
+      if (c.powerUp) {
+        this.eventBus.emit('POWERUP_COLLECTED', { type: c.powerUp });
+      } else {
+        const points = c.golden ? GOLDEN_SAWIT_POINTS : SAWIT_POINTS;
+        this.eventBus.emit('SAWIT_CAUGHT', {
+          points,
+          position: c.mesh.position.clone(),
+        });
+      }
       this.collectibles.removeCollectible(c);
     }
 
-    // Check obstacle collisions
+    // Obstacle collisions
     for (const o of this.obstacles.getActive()) {
       const dz = Math.abs(o.mesh.position.z - playerZ);
       if (o.lane === playerLane && dz < OBSTACLE_Z_RANGE) {
-        // Branch can be ducked under
         if (o.type === 'branch' && this.player.isDucking) {
           continue;
         }
 
         if (this.shielded) {
           this.shielded = false;
+          // Remove the obstacle so it doesn't hit again next frame
+          this.obstacles.removeObstacle(o);
           this.eventBus.emit('POWERUP_EXPIRED', { type: 'shield' });
-          continue;
+          return; // exit since we modified the array
         }
 
         this.eventBus.emit('OBSTACLE_HIT', { type: o.type });
-        return; // Stop checking after hit
+        return;
       }
     }
   }

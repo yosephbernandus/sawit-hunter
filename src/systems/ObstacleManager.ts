@@ -110,6 +110,14 @@ export class ObstacleManager {
     }
   }
 
+  removeObstacle(o: ActiveObstacle): void {
+    const idx = this.active.indexOf(o);
+    if (idx !== -1) {
+      this.release(o);
+      this.active.splice(idx, 1);
+    }
+  }
+
   getActive(): readonly ActiveObstacle[] {
     return this.active;
   }

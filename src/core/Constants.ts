@@ -41,7 +41,7 @@ export const POWERUP_CHANCE = 0.1;
 export const SHIELD_DURATION = 10;
 export const MAGNET_DURATION = 8;
 export const BIG_BUCKET_DURATION = 8;
-export const MAGNET_RANGE = 4;
+export const MAGNET_RANGE = 12;
 
 // Score milestones
 export const MILESTONE_INTERVAL = 100;

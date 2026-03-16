@@ -2,32 +2,34 @@ import type { GameScene as IGameScene } from '../core/SceneManager.ts';
 import * as THREE from 'three';
 import { createPalmTree, createGroundChunk } from '../rendering/ModelFactory.ts';
 import { randomRange } from '../utils/MathUtils.ts';
+import type { AudioManager } from '../audio/AudioManager.ts';
 
 export class MenuScene implements IGameScene {
   private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
+  private audio: AudioManager;
   private time = 0;
   private bgObjects: THREE.Object3D[] = [];
 
-  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
+  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, audio: AudioManager) {
     this.camera = camera;
     this.scene = scene;
+    this.audio = audio;
   }
 
   enter(): void {
     this.time = 0;
 
-    // Clean up any game objects from previous scene
+    // Clean up game objects from previous scene
     const toRemove: THREE.Object3D[] = [];
     this.scene.traverse((obj) => {
       if (obj.userData['gameObject']) toRemove.push(obj);
     });
     toRemove.forEach((obj) => this.scene.remove(obj));
 
-    // Create background scenery for the menu
+    // Background scenery
     this.bgObjects = [];
 
-    // Ground
     for (let i = 0; i < 4; i++) {
       const chunk = createGroundChunk();
       chunk.position.z = -i * 50 + 25;
@@ -36,7 +38,6 @@ export class MenuScene implements IGameScene {
       this.bgObjects.push(chunk);
     }
 
-    // Trees
     for (let i = 0; i < 16; i++) {
       const side = i % 2 === 0 ? -1 : 1;
       const tree = createPalmTree();
@@ -52,7 +53,6 @@ export class MenuScene implements IGameScene {
       this.bgObjects.push(tree);
     }
 
-    // Camera start
     this.camera.position.set(0, 8, 12);
     this.camera.lookAt(0, 1, -10);
 
@@ -61,6 +61,9 @@ export class MenuScene implements IGameScene {
     document.getElementById('hud')?.classList.add('hidden');
     document.getElementById('mobileControls')?.classList.add('hidden');
     document.getElementById('gameOverScreen')?.classList.add('hidden');
+
+    // Music
+    this.audio.playMusic('menu');
   }
 
   update(dt: number): void {
@@ -72,7 +75,6 @@ export class MenuScene implements IGameScene {
 
   exit(): void {
     document.getElementById('menuScreen')?.classList.add('hidden');
-    // Clean up menu bg objects
     for (const obj of this.bgObjects) {
       this.scene.remove(obj);
     }
