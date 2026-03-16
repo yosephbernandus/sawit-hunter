@@ -1,114 +1,137 @@
 import * as THREE from 'three';
-import { CHUNK_DEPTH, VISIBLE_CHUNKS, TREE_X_OFFSET, TREES_PER_CHUNK_HIGH, TREES_PER_CHUNK_LOW } from '../core/Constants.ts';
-import { createPalmTree, createGroundChunk } from '../rendering/ModelFactory.ts';
-import { randomRange } from '../utils/MathUtils.ts';
+import { TREE_X_OFFSET, TREES_PER_CHUNK_HIGH, TREES_PER_CHUNK_LOW } from '../core/Constants.ts';
+import { createPalmTree } from '../rendering/ModelFactory.ts';
+import { getMaterials } from '../rendering/MaterialLibrary.ts';
 import type { QualityTier } from '../utils/DeviceDetect.ts';
+import { LANE_WIDTH, LANE_COUNT } from '../core/Constants.ts';
 
-interface Chunk {
-  group: THREE.Group;
-  trees: THREE.Group[];
-  zFront: number; // the front edge (closest to camera)
+const GROUND_LENGTH = 300;
+const TREE_SPACING = 10; // one tree pair every N units
+const TOTAL_TREE_PAIRS = 30; // pool of tree pairs to cycle
+
+// Simple deterministic hash for consistent tree placement
+function seedRandom(seed: number): number {
+  let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
 }
 
 export class WorldGenerator {
   private scene: THREE.Scene;
-  private chunks: Chunk[] = [];
-  private treesPerChunk: number;
-  private nextChunkZ: number;
+  private totalDistance = 0;
+
+  // Two large ground planes that leapfrog
+  private groundA: THREE.Group;
+  private groundB: THREE.Group;
+
+  // Tree pool
+  private trees: THREE.Group[] = [];
+  private treePairsCount: number;
 
   constructor(scene: THREE.Scene, quality: QualityTier) {
     this.scene = scene;
-    this.treesPerChunk = quality === 'high' ? TREES_PER_CHUNK_HIGH : TREES_PER_CHUNK_LOW;
+    this.treePairsCount = quality === 'high' ? TOTAL_TREE_PAIRS : Math.floor(TOTAL_TREE_PAIRS * 0.6);
 
-    // Generate initial chunks extending into negative Z (ahead of player)
-    this.nextChunkZ = CHUNK_DEPTH; // start behind player
-    for (let i = 0; i < VISIBLE_CHUNKS; i++) {
-      this.spawnChunk();
-    }
-  }
+    // Create two large ground planes
+    this.groundA = this.createGround();
+    this.groundB = this.createGround();
+    scene.add(this.groundA);
+    scene.add(this.groundB);
 
-  update(dt: number, speed: number, playerZ: number): void {
-    // Move all chunks toward the player (positive Z)
-    for (const chunk of this.chunks) {
-      chunk.group.position.z += speed * dt;
-      chunk.zFront += speed * dt;
-    }
-
-    // Recycle chunks that have passed behind the player
-    for (const chunk of this.chunks) {
-      if (chunk.zFront > playerZ + CHUNK_DEPTH) {
-        this.recycleChunk(chunk);
-      }
-    }
-  }
-
-  private spawnChunk(): void {
-    this.nextChunkZ -= CHUNK_DEPTH;
-
-    const group = new THREE.Group();
-    group.position.z = this.nextChunkZ;
-
-    // Ground
-    const ground = createGroundChunk();
-    group.add(ground);
-
-    // Trees on both sides
-    const trees: THREE.Group[] = [];
-    for (let i = 0; i < this.treesPerChunk; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
+    // Create tree pool (2 trees per pair = left + right)
+    const treesPerSide = quality === 'high' ? TREES_PER_CHUNK_HIGH : TREES_PER_CHUNK_LOW;
+    for (let i = 0; i < this.treePairsCount * 2; i++) {
       const tree = createPalmTree();
-      const zOffset = (i / this.treesPerChunk) * CHUNK_DEPTH - CHUNK_DEPTH / 2;
-      tree.position.set(
-        side * (TREE_X_OFFSET + randomRange(0, 2)),
-        0,
-        zOffset + randomRange(-3, 3),
-      );
-      tree.rotation.y = randomRange(0, Math.PI * 2);
-      tree.scale.setScalar(randomRange(0.75, 1.1));
-      group.add(tree);
-      trees.push(tree);
+      tree.userData['gameObject'] = true;
+      scene.add(tree);
+      this.trees.push(tree);
     }
 
-    this.scene.add(group);
-    this.chunks.push({
-      group,
-      trees,
-      zFront: this.nextChunkZ + CHUNK_DEPTH / 2,
-    });
+    this.layoutAll();
   }
 
-  private recycleChunk(chunk: Chunk): void {
-    // Find the farthest chunk (most negative zFront)
-    let minZ = Infinity;
-    for (const c of this.chunks) {
-      if (c.zFront < minZ) minZ = c.zFront;
-    }
+  update(dt: number, speed: number, _playerZ: number): void {
+    this.totalDistance += speed * dt;
+    this.layoutAll();
+  }
 
-    // Place this chunk ahead of the farthest
-    const newZ = minZ - CHUNK_DEPTH;
-    const offset = newZ - (chunk.zFront - CHUNK_DEPTH / 2);
-    chunk.group.position.z += offset;
-    chunk.zFront = newZ + CHUNK_DEPTH / 2;
+  private layoutAll(): void {
+    // Ground: two planes leapfrog so one always covers the camera
+    const halfLen = GROUND_LENGTH / 2;
+    const groundCycle = this.totalDistance % (GROUND_LENGTH * 2);
 
-    // Randomize tree positions slightly
-    for (let i = 0; i < chunk.trees.length; i++) {
-      const tree = chunk.trees[i]!;
-      const side = i % 2 === 0 ? -1 : 1;
-      const zOffset = (i / chunk.trees.length) * CHUNK_DEPTH - CHUNK_DEPTH / 2;
-      tree.position.set(
-        side * (TREE_X_OFFSET + randomRange(0, 2)),
+    // Position ground A and B so they always tile seamlessly
+    const baseOffset = Math.floor(this.totalDistance / GROUND_LENGTH) * GROUND_LENGTH;
+    this.groundA.position.z = -(baseOffset - this.totalDistance);
+    this.groundB.position.z = -(baseOffset + GROUND_LENGTH - this.totalDistance);
+
+    // Trees: place in pairs along the road
+    // Calculate which tree slot index the player is near
+    const playerSlot = Math.floor(this.totalDistance / TREE_SPACING);
+
+    for (let i = 0; i < this.treePairsCount; i++) {
+      const slot = playerSlot - 3 + i; // start a few behind player
+      const worldZ = slot * TREE_SPACING;
+      const screenZ = -(worldZ - this.totalDistance);
+
+      // Left tree
+      const leftTree = this.trees[i * 2]!;
+      const sr1 = seedRandom(slot * 2);
+      const sr2 = seedRandom(slot * 2 + 0.5);
+      const sr3 = seedRandom(slot * 2 + 0.7);
+      leftTree.position.set(
+        -(TREE_X_OFFSET + sr1 * 2),
         0,
-        zOffset + randomRange(-3, 3),
+        screenZ + (sr2 - 0.5) * 4,
       );
-      tree.rotation.y = randomRange(0, Math.PI * 2);
-      tree.scale.setScalar(randomRange(0.75, 1.1));
+      leftTree.rotation.y = sr3 * Math.PI * 2;
+      leftTree.scale.setScalar(0.75 + sr1 * 0.35);
+
+      // Right tree
+      const rightTree = this.trees[i * 2 + 1]!;
+      const sr4 = seedRandom(slot * 2 + 1);
+      const sr5 = seedRandom(slot * 2 + 1.5);
+      const sr6 = seedRandom(slot * 2 + 1.7);
+      rightTree.position.set(
+        TREE_X_OFFSET + sr4 * 2,
+        0,
+        screenZ + (sr5 - 0.5) * 4,
+      );
+      rightTree.rotation.y = sr6 * Math.PI * 2;
+      rightTree.scale.setScalar(0.75 + sr4 * 0.35);
     }
+  }
+
+  private createGround(): THREE.Group {
+    const mats = getMaterials();
+    const group = new THREE.Group();
+    group.userData['gameObject'] = true;
+
+    const laneWidth = LANE_WIDTH * (LANE_COUNT + 1);
+
+    // Grass
+    const grassGeo = new THREE.PlaneGeometry(30, GROUND_LENGTH);
+    const grass = new THREE.Mesh(grassGeo, mats.ground);
+    grass.rotation.x = -Math.PI / 2;
+    grass.receiveShadow = true;
+    group.add(grass);
+
+    // Dirt path
+    const pathGeo = new THREE.PlaneGeometry(laneWidth, GROUND_LENGTH);
+    const path = new THREE.Mesh(pathGeo, mats.path);
+    path.rotation.x = -Math.PI / 2;
+    path.position.y = 0.01;
+    path.receiveShadow = true;
+    group.add(path);
+
+    return group;
   }
 
   dispose(): void {
-    for (const chunk of this.chunks) {
-      this.scene.remove(chunk.group);
+    this.scene.remove(this.groundA);
+    this.scene.remove(this.groundB);
+    for (const tree of this.trees) {
+      this.scene.remove(tree);
     }
-    this.chunks = [];
+    this.trees = [];
   }
 }
