@@ -17,61 +17,61 @@
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-4YBQBER0XY");
     </script>
-    <title>Sawit Hunter 🌴</title>
+    <title>Sawit Runner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
-
-    <!-- Preload PixiJS from CDN for faster loading -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/pixi.js@8.15.0/dist/pixi.min.js" as="script" crossorigin />
-
-    <!-- Preload critical assets for faster loading -->
-    <link rel="preload" href="dist/game.bundle.js" as="script" />
-    <link rel="preload" href="assets/svgs/bucket.svg" as="image" />
-    <link rel="preload" href="assets/png/sawit-new.webp" as="image" />
-    <link rel="preload" href="assets/png/sawit-tree.webp" as="image" />
-    <link rel="preload" href="assets/png/sawit-tree-farm.webp" as="image" />
-    <link rel="preload" href="assets/sounds/jokowi-kaget.mp3" as="audio" />
-    <link rel="preload" href="assets/sounds/solid.mp3" as="audio" />
-    <link rel="preload" href="assets/sounds/selamat-berjuang-jokowi.mp3" as="audio" />
-
-    <!-- Load PixiJS from CDN (cached globally, parallel with page load) -->
-    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.15.0/dist/pixi.min.js" crossorigin></script>
+    <link rel="stylesheet" href="/styles/main.css" />
   </head>
 
   <body>
-    <div class="stars"></div>
-    <div class="twinkling"></div>
+    <!-- Three.js Canvas (fullscreen, behind overlays) -->
+    <canvas id="gameCanvas"></canvas>
 
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="screen">
+    <div id="loadingScreen" class="overlay">
       <div class="game-title">
-        <img class="title-emoji" src="assets/png/sawit-tree.webp" alt="palm tree" />
-        <h1>SAWIT<br />HUNTER</h1>
-        <img class="title-emoji" src="assets/png/sawit-tree.webp" alt="palm tree" />
+        <img
+          class="title-img"
+          src="/assets/textures/sawit-tree.webp"
+          alt="palm tree"
+        />
+        <h1>SAWIT<br />RUNNER</h1>
+        <img
+          class="title-img"
+          src="/assets/textures/sawit-tree.webp"
+          alt="palm tree"
+        />
       </div>
       <div class="loading-container">
         <div class="loading-bar">
           <div class="loading-fill" id="loadingFill"></div>
         </div>
-        <div class="loading-text" id="loadingText">Loading assets...</div>
+        <div class="loading-text" id="loadingText">Loading...</div>
       </div>
     </div>
 
-    <div id="startScreen" class="screen" style="display: none;">
+    <!-- Menu Screen -->
+    <div id="menuScreen" class="overlay hidden">
       <div class="game-title">
-        <img class="title-emoji" src="assets/png/sawit-tree.webp" alt="palm tree" />
-        <h1>SAWIT<br />HUNTER</h1>
-        <img class="title-emoji" src="assets/png/sawit-tree.webp" alt="palm tree" />
+        <img
+          class="title-img"
+          src="/assets/textures/sawit-tree.webp"
+          alt="palm tree"
+        />
+        <h1>SAWIT<br />RUNNER</h1>
+        <img
+          class="title-img"
+          src="/assets/textures/sawit-tree.webp"
+          alt="palm tree"
+        />
       </div>
-      <div class="game-subtitle">Catch the falling palm fruits!</div>
+      <div class="game-subtitle">Run through the plantation!</div>
       <div class="input-container">
         <input
           id="usernameInput"
@@ -80,84 +80,48 @@
         />
       </div>
       <button id="playBtn" class="game-btn">
-        <span class="btn-text">START GAME</span>
-        <span class="btn-icon">🎮</span>
+        <span class="btn-text">START</span>
       </button>
       <div class="high-score-display" id="highScoreDisplay"></div>
     </div>
 
-    <div id="gameContainer" class="game-container">
-      <div class="game-ui">
-        <div class="ui-left">
-          <div class="stat-box">
-            <div class="stat-label">PLAYER</div>
-            <div class="stat-value" id="playerName">---</div>
-          </div>
-        </div>
-        <div class="ui-center">
-          <div class="stat-box score-box">
-            <div class="stat-label">SCORE</div>
-            <div class="stat-value score-value" id="scoreDisplay">0</div>
-          </div>
-        </div>
-        <div class="ui-right">
-          <div class="stat-box">
-            <div class="stat-label">HIGH</div>
-            <div class="stat-value" id="highScore">0</div>
-          </div>
+    <!-- HUD (in-game) -->
+    <div id="hud" class="hud hidden">
+      <div class="hud-left">
+        <div class="hud-box">
+          <div class="hud-label">PLAYER</div>
+          <div class="hud-value" id="hudPlayerName">---</div>
         </div>
       </div>
-      <div class="game-main">
-        <div class="canvas-wrapper">
-          <canvas id="gameCanvas"></canvas>
-        </div>
-        <div class="controls-guide">
-          <div class="guide-title">CONTROLS</div>
-          <div class="guide-section">
-            <div class="guide-label">MOVE</div>
-            <div class="key-row">
-              <div class="key-group">
-                <div class="key-key">←</div>
-                <div class="key-key">→</div>
-              </div>
-              <div class="key-or">or</div>
-              <div class="key-group">
-                <div class="key-key">A</div>
-                <div class="key-key">D</div>
-              </div>
-            </div>
-          </div>
-          <div class="guide-section">
-            <div class="guide-label">SPRINT</div>
-            <div class="key-row">
-              <div class="key-key key-wide">SHIFT</div>
-              <div class="key-plus">+</div>
-              <div class="key-group">
-                <div class="key-key">←</div>
-                <div class="key-key">→</div>
-              </div>
-              <div class="key-or">or</div>
-              <div class="key-group">
-                <div class="key-key">A</div>
-                <div class="key-key">D</div>
-              </div>
-            </div>
-          </div>
-          <div class="guide-section">
-            <div class="guide-label">DRAG</div>
-            <div class="key-row">
-              <div class="key-mouse">🖱️</div>
-            </div>
-          </div>
+      <div class="hud-center">
+        <div class="hud-box score-box">
+          <div class="hud-label">SCORE</div>
+          <div class="hud-value score-value" id="hudScore">0</div>
         </div>
       </div>
-      <div class="mobile-controls">
-        <button class="control-btn" id="leftBtn">◀</button>
-        <button class="control-btn" id="rightBtn">▶</button>
+      <div class="hud-right">
+        <div class="hud-box">
+          <div class="hud-label">HIGH</div>
+          <div class="hud-value" id="hudHighScore">0</div>
+        </div>
       </div>
     </div>
 
-    <div id="gameOverScreen" class="screen">
+    <!-- Powerup indicator -->
+    <div id="powerupIndicator" class="powerup-indicator hidden">
+      <span id="powerupIcon"></span>
+      <span id="powerupTimer"></span>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobileControls" class="mobile-controls hidden">
+      <button class="control-btn" id="leftBtn">&#9664;</button>
+      <button class="control-btn" id="duckBtn">&#9660;</button>
+      <button class="control-btn" id="rightBtn">&#9654;</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="overlay hidden">
       <div class="game-over-content">
         <h2 class="game-over-title">GAME OVER</h2>
         <div id="gameOverText" class="game-over-message"></div>
@@ -167,7 +131,6 @@
         </div>
         <button id="restartBtn" class="game-btn restart-btn">
           <span class="btn-text">PLAY AGAIN</span>
-          <span class="btn-icon">🔄</span>
         </button>
         <div class="support-cta">
           <p class="support-text">
@@ -182,49 +145,11 @@
             rel="noopener noreferrer"
           >
             <span class="link-text">Support Aceh via Kitabisa</span>
-            <span class="link-icon">❤️</span>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Audio files with preload="metadata" for faster initial load -->
-    <!-- Only critical sounds use preload="auto" -->
-    <audio
-      id="scoreSound"
-      src="assets/sounds/hey-antek-antek-asing-prabowo.mp3"
-      preload="metadata"
-    ></audio>
-    <audio
-      id="deathSound"
-      src="assets/sounds/hidup-jokowi.mp3"
-      preload="metadata"
-    ></audio>
-    <audio
-      id="catchSound"
-      src="assets/sounds/jokowi-kaget.mp3"
-      preload="auto"
-    ></audio>
-    <audio
-      id="spawnSound"
-      src="assets/sounds/solid.mp3"
-      preload="auto"
-    ></audio>
-    <audio
-      id="menuMusic"
-      src="assets/sounds/selamat-berjuang-jokowi.mp3"
-      loop
-      preload="auto"
-    ></audio>
-    <audio
-      id="endingMusic"
-      src="assets/sounds/penyanyi-solo-gatau-siapa.mp3"
-      loop
-      preload="metadata"
-    ></audio>
-
-    <!-- Development: use game.js with Bun bundling -->
-    <!-- Production: use dist/game.bundle.js -->
-    <script type="module" src="dist/game.bundle.js"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

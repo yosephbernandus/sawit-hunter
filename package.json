@@ -1,17 +1,21 @@
 {
-  "name": "sawit-hunter",
+  "name": "sawit-runner",
   "private": true,
+  "version": "2.0.0",
+  "type": "module",
   "scripts": {
-    "start": "bun --hot ./server.ts",
-    "build": "bun build game.js --outfile=dist/game.bundle.js --target=browser --external pixi.js"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "pixi.js": "^8.15.0"
+    "three": "^0.172.0",
+    "howler": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/three": "^0.172.0",
+    "@types/howler": "^2.2.12",
+    "vite": "^6.3.5",
+    "typescript": "^5.8.3"
   }
 }

@@ -1,15 +1,6 @@
 {
   "buildCommand": "bun install && bun run build",
-  "outputDirectory": ".",
+  "outputDirectory": "dist",
   "installCommand": "bun install",
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  "framework": "vite"
 }
