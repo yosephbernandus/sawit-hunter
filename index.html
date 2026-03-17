@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <!-- Google tag (gtag.js) -->
     <script
@@ -140,12 +140,14 @@
 
     <!-- Mobile Controls -->
     <div id="mobileControls" class="mobile-controls hidden">
-      <button class="control-btn" id="leftBtn">&#9664;</button>
-      <div class="control-col">
-        <button class="control-btn" id="jumpBtn">&#9650;</button>
-        <button class="control-btn" id="duckBtn">&#9660;</button>
+      <div class="ctrl-side ctrl-left">
+        <button class="control-btn" id="leftBtn">&#9664;</button>
+        <button class="control-btn" id="rightBtn">&#9654;</button>
       </div>
-      <button class="control-btn" id="rightBtn">&#9654;</button>
+      <div class="ctrl-side ctrl-right">
+        <button class="control-btn ctrl-jump" id="jumpBtn">&#9650;</button>
+        <button class="control-btn ctrl-duck" id="duckBtn">&#9660;</button>
+      </div>
     </div>
 
     <!-- Game Over Screen -->

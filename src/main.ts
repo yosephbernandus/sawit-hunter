@@ -5,6 +5,20 @@ import { MenuScene } from './scenes/MenuScene.ts';
 import { GameScene } from './scenes/GameScene.ts';
 import { GameOverScene } from './scenes/GameOverScene.ts';
 import { AudioManager } from './audio/AudioManager.ts';
+import { Howler } from 'howler';
+
+// iOS requires AudioContext to be resumed inside a user gesture
+function unlockAudio(): void {
+  if (Howler.ctx && Howler.ctx.state === 'suspended') {
+    Howler.ctx.resume().catch(() => {});
+  }
+  document.removeEventListener('touchstart', unlockAudio);
+  document.removeEventListener('touchend', unlockAudio);
+  document.removeEventListener('click', unlockAudio);
+}
+document.addEventListener('touchstart', unlockAudio, { passive: true });
+document.addEventListener('touchend', unlockAudio, { passive: true });
+document.addEventListener('click', unlockAudio);
 
 async function init() {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
