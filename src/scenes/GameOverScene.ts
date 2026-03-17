@@ -28,9 +28,9 @@ export class GameOverScene implements IGameScene {
       `You ran ${Math.floor(this.distance)}m!`;
 
     // High score
-    const prev = parseInt(localStorage.getItem('sawitRunnerHighScore') ?? '0', 10);
+    const prev = parseInt(localStorage.getItem('sawitHunterHighScore') ?? '0', 10);
     if (this.score > prev) {
-      localStorage.setItem('sawitRunnerHighScore', String(this.score));
+      localStorage.setItem('sawitHunterHighScore', String(this.score));
     }
 
     // Play game over music

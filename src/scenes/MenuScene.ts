@@ -63,7 +63,7 @@ export class MenuScene implements IGameScene {
     document.getElementById('gameOverScreen')?.classList.add('hidden');
 
     // High score
-    const hs = localStorage.getItem('sawitRunnerHighScore') ?? '0';
+    const hs = localStorage.getItem('sawitHunterHighScore') ?? '0';
     const hsDisplay = document.getElementById('highScoreDisplay');
     if (hsDisplay) {
       hsDisplay.textContent = parseInt(hs, 10) > 0 ? `High Score: ${hs}` : '';

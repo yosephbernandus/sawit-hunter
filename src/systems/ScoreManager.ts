@@ -1,7 +1,7 @@
 import type { EventBus } from '../core/EventBus.ts';
 import { MILESTONE_INTERVAL } from '../core/Constants.ts';
 
-const LS_KEY = 'sawitRunnerHighScore';
+const LS_KEY = 'sawitHunterHighScore';
 
 export class ScoreManager {
   private score = 0;
