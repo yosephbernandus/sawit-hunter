@@ -129,5 +129,7 @@ export class CollectibleManager {
       this.scene.remove(c.mesh);
     }
     this.active = [];
+    this.pool.clear();
+    this.goldenPool.clear();
   }
 }

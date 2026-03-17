@@ -7,6 +7,13 @@ export default defineConfig({
     outDir: 'dist',
     target: 'es2020',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+        },
+      },
+    },
   },
   server: {
     open: true,

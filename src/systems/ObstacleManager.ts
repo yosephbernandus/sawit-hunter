@@ -127,5 +127,8 @@ export class ObstacleManager {
       this.scene.remove(o.mesh);
     }
     this.active = [];
+    this.snakePool.clear();
+    this.logPool.clear();
+    this.branchPool.clear();
   }
 }

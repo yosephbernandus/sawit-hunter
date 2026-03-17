@@ -27,4 +27,8 @@ export class ObjectPool<T> {
   get size(): number {
     return this.available.length;
   }
+
+  clear(): void {
+    this.available.length = 0;
+  }
 }

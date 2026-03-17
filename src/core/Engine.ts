@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TICK_RATE, MAX_DELTA } from './Constants.ts';
 import { SceneManager } from './SceneManager.ts';
+import { isMobile } from '../utils/DeviceDetect.ts';
 
 export class Engine {
   readonly renderer: THREE.WebGLRenderer;
@@ -21,7 +22,7 @@ export class Engine {
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = !this.isMobile();
+    this.renderer.shadowMap.enabled = !isMobile();
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
@@ -83,15 +84,15 @@ export class Engine {
 
   private onVisibility = (): void => {
     if (document.hidden) {
+      this.running = false;
+      cancelAnimationFrame(this.animFrameId);
+    } else if (!this.running) {
+      this.running = true;
       this.lastTime = performance.now();
       this.accumulator = 0;
+      this.animFrameId = requestAnimationFrame(this.loop);
     }
   };
-
-  private isMobile(): boolean {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      ('ontouchstart' in window && window.innerWidth < 1024);
-  }
 
   dispose(): void {
     this.stop();
