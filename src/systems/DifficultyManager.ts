@@ -36,8 +36,8 @@ export class DifficultyManager {
     // Obstacle types
     const types: ObstacleType[] = [];
     if (this.currentScore >= OBSTACLE_START_SCORE) types.push('snake');
-    if (this.currentScore >= 300) types.push('log');
-    if (this.currentScore >= 500) types.push('branch');
+    if (this.currentScore >= 200) types.push('log');
+    if (this.currentScore >= 350) types.push('branch');
     this.obstacles.setEnabledTypes(types);
 
     // Obstacle spawn rate

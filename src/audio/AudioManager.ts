@@ -11,18 +11,25 @@ export type SoundId =
 export type MusicId = 'menu' | 'gameOver';
 
 const SOUND_DEFS: Record<SoundId, { path: string; volume: number; limit: number }> = {
-  catch:      { path: '/assets/sounds/jokowi-kaget.mp3',              volume: 0.5, limit: 2 },
-  spawn:      { path: '/assets/sounds/solid.mp3',                     volume: 0.4, limit: 1 },
-  milestone:  { path: '/assets/sounds/hey-antek-antek-asing-prabowo.mp3', volume: 0.6, limit: 1 },
-  death:      { path: '/assets/sounds/hidup-jokowi.mp3',              volume: 0.7, limit: 1 },
-  powerup:    { path: '/assets/sounds/solid.mp3',                     volume: 0.5, limit: 1 },
-  laneChange: { path: '/assets/sounds/solid.mp3',                     volume: 0.3, limit: 1 },
+  catch: { path: '/assets/sounds/kaget.mp3', volume: 0.5, limit: 2 },
+  spawn: { path: '/assets/sounds/solid.mp3', volume: 0.4, limit: 1 },
+  milestone: { path: '/assets/sounds/hey-antek-antek-asing.mp3', volume: 0.6, limit: 1 },
+  death: { path: '/assets/sounds/hidup.mp3', volume: 0.7, limit: 1 },
+  powerup: { path: '/assets/sounds/solid.mp3', volume: 0.5, limit: 1 },
+  laneChange: { path: '/assets/sounds/solid.mp3', volume: 0.3, limit: 1 },
 };
 
 const MUSIC_PATHS: Record<MusicId, string> = {
-  menu: '/assets/sounds/selamat-berjuang-jokowi.mp3',
-  gameOver: '/assets/sounds/penyanyi-solo-gatau-siapa.mp3',
+  menu: '/assets/sounds/selamat-berjuang.mp3',
+  gameOver: '/assets/sounds/penyanyi-solo-gatau-siapa.mp3', // placeholder, overridden at runtime
 };
+
+const GAME_OVER_TRACKS = [
+  '/assets/sounds/penyanyi-solo-gatau-siapa.mp3',
+  '/assets/sounds/fu-arc-opening-anime.mp3',
+  '/assets/sounds/seventeen.mp3',
+  '/assets/sounds/diantara-ku-dan-sawit.mp3',
+];
 
 const MUSIC_VOLUME = 0.35;
 const FADE_IN_MS = 600;
@@ -31,6 +38,7 @@ export class AudioManager {
   private sounds = new Map<SoundId, Howl>();
   private activeSfx = new Map<SoundId, number[]>(); // track active sound IDs per type
   private music = new Map<MusicId, Howl>();
+  private gameOverHowls: Howl[] = [];
   private currentMusicId: MusicId | null = null;
   private currentMusicSoundId: number | null = null;
   private _muted = false;
@@ -47,15 +55,25 @@ export class AudioManager {
       this.activeSfx.set(id as SoundId, []);
     }
 
-    // Music — separate Howl per track
-    for (const [id, path] of Object.entries(MUSIC_PATHS)) {
-      this.music.set(id as MusicId, new Howl({
+    // Menu music
+    this.music.set('menu', new Howl({
+      src: [MUSIC_PATHS.menu],
+      volume: MUSIC_VOLUME,
+      loop: true,
+      preload: true,
+    }));
+
+    // Game over tracks — preload all, pick randomly at play time
+    for (const path of GAME_OVER_TRACKS) {
+      this.gameOverHowls.push(new Howl({
         src: [path],
         volume: MUSIC_VOLUME,
         loop: true,
         preload: true,
       }));
     }
+    // Seed the map with a placeholder so type lookups don't break
+    this.music.set('gameOver', this.gameOverHowls[0]!);
   }
 
   play(id: SoundId): void {
@@ -92,15 +110,26 @@ export class AudioManager {
   }
 
   playMusic(id: MusicId): void {
-    if (id === this.currentMusicId) return;
+    // Stop everything currently playing
+    for (const [, howl] of this.music) howl.stop();
+    for (const howl of this.gameOverHowls) howl.stop();
+    this.currentMusicId = null;
+    this.currentMusicSoundId = null;
 
-    // Force stop ALL music tracks immediately
-    for (const [, howl] of this.music) {
-      howl.stop();
+    let next: Howl;
+    if (id === 'gameOver') {
+      const idx = parseInt(localStorage.getItem('sawitGameOverTrack') ?? '0', 10);
+      next = this.gameOverHowls[idx % this.gameOverHowls.length]!;
+      localStorage.setItem('sawitGameOverTrack', String((idx + 1) % this.gameOverHowls.length));
+    } else {
+      const found = this.music.get(id);
+      if (!found) return;
+      next = found;
     }
 
-    const next = this.music.get(id);
-    if (!next) return;
+    // Stop everything EXCEPT the track we're about to play
+    for (const [, howl] of this.music) { if (howl !== next) howl.stop(); }
+    for (const howl of this.gameOverHowls) { if (howl !== next) howl.stop(); }
 
     this.currentMusicId = id;
     this.currentMusicSoundId = next.play();
@@ -111,20 +140,20 @@ export class AudioManager {
   stopMusic(): void {
     if (!this.currentMusicId) return;
 
-    const current = this.music.get(this.currentMusicId);
     const soundId = this.currentMusicSoundId;
     this.currentMusicId = null;
     this.currentMusicSoundId = null;
 
-    if (current) {
+    // Fade out then hard-stop every possible music track
+    const allHowls = [...this.music.values(), ...this.gameOverHowls];
+    for (const howl of allHowls) {
       if (soundId !== null) {
-        // Short fade out then hard stop
-        current.fade(current.volume(), 0, 300, soundId);
-        setTimeout(() => current.stop(soundId), 350);
-      } else {
-        current.stop();
+        howl.fade(howl.volume(), 0, 300, soundId);
       }
     }
+    setTimeout(() => {
+      for (const howl of allHowls) howl.stop();
+    }, 350);
   }
 
   get muted(): boolean {

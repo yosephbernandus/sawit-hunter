@@ -32,7 +32,7 @@ export const SAWIT_SPAWN_INTERVAL = 1.2; // seconds
 export const SAWIT_Y = 1.0;
 
 // Obstacles
-export const OBSTACLE_START_SCORE = 200;
+export const OBSTACLE_START_SCORE = 100;
 export const OBSTACLE_SPAWN_INTERVAL_BASE = 3.0; // seconds
 export const OBSTACLE_SPAWN_INTERVAL_MIN = 1.5;
 
