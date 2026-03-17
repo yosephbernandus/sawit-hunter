@@ -26,6 +26,7 @@ export class WorldGenerator {
   // Tree pool
   private trees: THREE.Group[] = [];
   private treePairsCount: number;
+  private lastPlayerSlot = -999;
 
   constructor(scene: THREE.Scene, quality: QualityTier) {
     this.scene = scene;
@@ -46,43 +47,50 @@ export class WorldGenerator {
       this.trees.push(tree);
     }
 
-    this.layoutAll();
+    this.layoutTrees(0);
   }
 
   update(dt: number, speed: number, _playerZ: number): void {
     this.totalDistance += speed * dt;
-    this.layoutAll();
-  }
 
-  private layoutAll(): void {
-    // Ground: two planes leapfrog so one always covers the camera
-    const halfLen = GROUND_LENGTH / 2;
-    const groundCycle = this.totalDistance % (GROUND_LENGTH * 2);
-
-    // Position ground A and B so they always tile seamlessly
+    // Ground: two planes leapfrog
     const baseOffset = Math.floor(this.totalDistance / GROUND_LENGTH) * GROUND_LENGTH;
     this.groundA.position.z = -(baseOffset - this.totalDistance);
     this.groundB.position.z = -(baseOffset + GROUND_LENGTH - this.totalDistance);
 
-    // Trees: place in pairs along the road
-    // Calculate which tree slot index the player is near
+    // Trees: only recalculate when player crosses into a new slot
     const playerSlot = Math.floor(this.totalDistance / TREE_SPACING);
+    if (playerSlot !== this.lastPlayerSlot) {
+      this.lastPlayerSlot = playerSlot;
+      this.layoutTrees(playerSlot);
+    }
 
+    // Slide all trees by current offset (cheap — just Z update)
     for (let i = 0; i < this.treePairsCount; i++) {
-      const slot = playerSlot - 3 + i; // start a few behind player
+      const slot = playerSlot - 3 + i;
       const worldZ = slot * TREE_SPACING;
       const screenZ = -(worldZ - this.totalDistance);
+
+      const leftTree = this.trees[i * 2]!;
+      const rightTree = this.trees[i * 2 + 1]!;
+      // Only update Z — X, Y, rotation, scale stay from layoutTrees
+      leftTree.position.z = screenZ + leftTree.userData['zOff'] as number;
+      rightTree.position.z = screenZ + rightTree.userData['zOff'] as number;
+    }
+  }
+
+  private layoutTrees(playerSlot: number): void {
+    for (let i = 0; i < this.treePairsCount; i++) {
+      const slot = playerSlot - 3 + i;
 
       // Left tree
       const leftTree = this.trees[i * 2]!;
       const sr1 = seedRandom(slot * 2);
       const sr2 = seedRandom(slot * 2 + 0.5);
       const sr3 = seedRandom(slot * 2 + 0.7);
-      leftTree.position.set(
-        -(TREE_X_OFFSET + sr1 * 2),
-        0,
-        screenZ + (sr2 - 0.5) * 4,
-      );
+      leftTree.position.x = -(TREE_X_OFFSET + sr1 * 2);
+      leftTree.position.y = 0;
+      leftTree.userData['zOff'] = (sr2 - 0.5) * 4;
       leftTree.rotation.y = sr3 * Math.PI * 2;
       leftTree.scale.setScalar(0.75 + sr1 * 0.35);
 
@@ -91,11 +99,9 @@ export class WorldGenerator {
       const sr4 = seedRandom(slot * 2 + 1);
       const sr5 = seedRandom(slot * 2 + 1.5);
       const sr6 = seedRandom(slot * 2 + 1.7);
-      rightTree.position.set(
-        TREE_X_OFFSET + sr4 * 2,
-        0,
-        screenZ + (sr5 - 0.5) * 4,
-      );
+      rightTree.position.x = TREE_X_OFFSET + sr4 * 2;
+      rightTree.position.y = 0;
+      rightTree.userData['zOff'] = (sr5 - 0.5) * 4;
       rightTree.rotation.y = sr6 * Math.PI * 2;
       rightTree.scale.setScalar(0.75 + sr4 * 0.35);
     }

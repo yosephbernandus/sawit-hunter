@@ -26,6 +26,7 @@ export class CollectibleManager {
   private active: ActiveCollectible[] = [];
   private spawnTimer = 0;
   private spawnAheadZ = -60;
+  private elapsedTime = 0;
 
   private pool = new ObjectPool<THREE.Group>(
     () => createSawitFruit(false),
@@ -50,6 +51,8 @@ export class CollectibleManager {
       this.spawnTimer = SAWIT_SPAWN_INTERVAL;
     }
 
+    this.elapsedTime += dt;
+
     // Move collectibles toward player
     for (const c of this.active) {
       c.mesh.position.z += speed * dt;
@@ -57,7 +60,7 @@ export class CollectibleManager {
 
       // Power-up items bob up and down
       if (c.powerUp) {
-        c.mesh.position.y = SAWIT_Y + Math.sin(performance.now() * 0.004) * 0.3;
+        c.mesh.position.y = SAWIT_Y + Math.sin(this.elapsedTime * 4) * 0.3;
       }
     }
 

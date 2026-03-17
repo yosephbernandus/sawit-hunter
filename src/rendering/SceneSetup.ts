@@ -12,8 +12,8 @@ export function setupScene(scene: THREE.Scene, quality: QualityTier): void {
   // Directional light (sun)
   const sun = new THREE.DirectionalLight(0xffffff, 1.5);
   sun.position.set(10, 20, 10);
-  sun.castShadow = quality === 'high';
-  if (sun.castShadow) {
+  if (quality === 'high') {
+    sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 0.5;
     sun.shadow.camera.far = 80;
@@ -24,11 +24,11 @@ export function setupScene(scene: THREE.Scene, quality: QualityTier): void {
   }
   scene.add(sun);
 
-  // Ambient light
-  const ambient = new THREE.AmbientLight(0x88aacc, 0.6);
-  scene.add(ambient);
-
-  // Hemisphere light for natural sky/ground coloring
-  const hemi = new THREE.HemisphereLight(0x87ceeb, 0x4a7c2e, 0.4);
-  scene.add(hemi);
+  // On low-end, merge ambient + hemisphere into one brighter ambient
+  if (quality === 'high') {
+    scene.add(new THREE.AmbientLight(0x88aacc, 0.6));
+    scene.add(new THREE.HemisphereLight(0x87ceeb, 0x4a7c2e, 0.4));
+  } else {
+    scene.add(new THREE.AmbientLight(0x99bbdd, 0.9));
+  }
 }

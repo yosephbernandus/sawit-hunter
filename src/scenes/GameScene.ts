@@ -48,6 +48,11 @@ export class GameScene implements IGameScene {
   private pauseKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   private resumeHandler: (() => void) | null = null;
 
+  // Cached DOM
+  private hudScore!: HTMLElement;
+  private hudHighScore!: HTMLElement;
+  private hudDistance!: HTMLElement;
+
   private workerAnimator: WorkerAnimator | null = null;
   private onGameOver: (score: number, distance: number) => void;
 
@@ -122,8 +127,8 @@ export class GameScene implements IGameScene {
     });
 
     this.eventBus.on('SCORE_CHANGED', ({ score, highScore }) => {
-      document.getElementById('hudScore')!.textContent = String(score);
-      document.getElementById('hudHighScore')!.textContent = String(highScore);
+      this.hudScore.textContent = String(score);
+      this.hudHighScore.textContent = String(highScore);
     });
 
     this.eventBus.on('SPEED_MILESTONE', () => {
@@ -144,12 +149,14 @@ export class GameScene implements IGameScene {
       }, 1200); // extra time for death animation to play out
     });
 
-    // UI
+    // UI — cache DOM refs
     document.getElementById('hud')?.classList.remove('hidden');
     document.getElementById('hudPlayerName')!.textContent = this.playerName;
-    document.getElementById('hudScore')!.textContent = '0';
-    document.getElementById('hudHighScore')!.textContent =
-      String(this.scoreManager.getHighScore());
+    this.hudScore = document.getElementById('hudScore')!;
+    this.hudHighScore = document.getElementById('hudHighScore')!;
+    this.hudDistance = document.getElementById('hudDistance')!;
+    this.hudScore.textContent = '0';
+    this.hudHighScore.textContent = String(this.scoreManager.getHighScore());
 
     if (isMobile()) {
       document.getElementById('mobileControls')?.classList.remove('hidden');
@@ -211,7 +218,7 @@ export class GameScene implements IGameScene {
     this.cameraCtrl.update(dt);
 
     // Update distance display
-    document.getElementById('hudDistance')!.textContent = `${Math.floor(this.distance)}m`;
+    this.hudDistance.textContent = `${Math.floor(this.distance)}m`;
   }
 
   private showScorePopup(points: number): void {

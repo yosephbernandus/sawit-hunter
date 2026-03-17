@@ -21,7 +21,7 @@ const SOUND_DEFS: Record<SoundId, { path: string; volume: number; limit: number 
 
 const MUSIC_PATHS: Record<MusicId, string> = {
   menu: '/assets/sounds/selamat-berjuang.mp3',
-  gameOver: '/assets/sounds/penyanyi-solo-gatau-siapa.mp3', // placeholder, overridden at runtime
+  gameOver: '/assets/sounds/penyanyi-solo-gatau-siapa.mp3',
 };
 
 const GAME_OVER_TRACKS = [
@@ -32,11 +32,11 @@ const GAME_OVER_TRACKS = [
 ];
 
 const MUSIC_VOLUME = 0.35;
-const FADE_IN_MS = 600;
+const FADE_IN_MS = 300; // reduced from 600 for snappier feel on mobile
 
 export class AudioManager {
   private sounds = new Map<SoundId, Howl>();
-  private activeSfx = new Map<SoundId, number[]>(); // track active sound IDs per type
+  private activeSfx = new Map<SoundId, number[]>();
   private music = new Map<MusicId, Howl>();
   private gameOverHowls: Howl[] = [];
   private currentMusicId: MusicId | null = null;
@@ -44,36 +44,40 @@ export class AudioManager {
   private _muted = false;
 
   constructor() {
-    // SFX — each gets its own Howl
+    // Force Web Audio API for lower latency (Howler falls back to HTML5 on some mobile)
+    Howler.usingWebAudio = true;
+
+    // SFX — force Web Audio, no HTML5 fallback
     for (const [id, def] of Object.entries(SOUND_DEFS)) {
       const howl = new Howl({
         src: [def.path],
         volume: def.volume,
         preload: true,
+        html5: false,
       });
       this.sounds.set(id as SoundId, howl);
       this.activeSfx.set(id as SoundId, []);
     }
 
-    // Menu music
+    // Menu music — html5 for streaming (reduces memory)
     this.music.set('menu', new Howl({
       src: [MUSIC_PATHS.menu],
       volume: MUSIC_VOLUME,
       loop: true,
       preload: true,
+      html5: true,
     }));
 
-    // Game over tracks — preload all, pick randomly at play time
+    // Game over tracks — html5 for streaming
     for (const path of GAME_OVER_TRACKS) {
       this.gameOverHowls.push(new Howl({
         src: [path],
         volume: MUSIC_VOLUME,
         loop: true,
         preload: true,
+        html5: true,
       }));
     }
-    // Seed the map with a placeholder so type lookups don't break
-    this.music.set('gameOver', this.gameOverHowls[0]!);
   }
 
   play(id: SoundId): void {
@@ -84,18 +88,15 @@ export class AudioManager {
     const def = SOUND_DEFS[id];
     const active = this.activeSfx.get(id)!;
 
-    // Enforce concurrency limit — stop oldest if at max
+    // Enforce concurrency limit
     while (active.length >= def.limit) {
       const oldest = active.shift();
-      if (oldest !== undefined) {
-        howl.stop(oldest);
-      }
+      if (oldest !== undefined) howl.stop(oldest);
     }
 
     const soundId = howl.play();
     active.push(soundId);
 
-    // Clean up when sound finishes
     howl.once('end', () => {
       const idx = active.indexOf(soundId);
       if (idx !== -1) active.splice(idx, 1);
@@ -127,10 +128,6 @@ export class AudioManager {
       next = found;
     }
 
-    // Stop everything EXCEPT the track we're about to play
-    for (const [, howl] of this.music) { if (howl !== next) howl.stop(); }
-    for (const howl of this.gameOverHowls) { if (howl !== next) howl.stop(); }
-
     this.currentMusicId = id;
     this.currentMusicSoundId = next.play();
     next.volume(0, this.currentMusicSoundId);
@@ -140,20 +137,12 @@ export class AudioManager {
   stopMusic(): void {
     if (!this.currentMusicId) return;
 
-    const soundId = this.currentMusicSoundId;
     this.currentMusicId = null;
     this.currentMusicSoundId = null;
 
-    // Fade out then hard-stop every possible music track
-    const allHowls = [...this.music.values(), ...this.gameOverHowls];
-    for (const howl of allHowls) {
-      if (soundId !== null) {
-        howl.fade(howl.volume(), 0, 300, soundId);
-      }
-    }
-    setTimeout(() => {
-      for (const howl of allHowls) howl.stop();
-    }, 350);
+    // Hard-stop all music immediately (no fade delay on mobile)
+    for (const [, howl] of this.music) howl.stop();
+    for (const howl of this.gameOverHowls) howl.stop();
   }
 
   get muted(): boolean {

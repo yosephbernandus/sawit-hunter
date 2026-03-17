@@ -5,6 +5,7 @@ import type { CollisionSystem } from './CollisionSystem.ts';
 import type { CollectibleManager } from './CollectibleManager.ts';
 import { SHIELD_DURATION, MAGNET_DURATION, BIG_BUCKET_DURATION, MAGNET_RANGE } from '../core/Constants.ts';
 import { getMaterials } from '../rendering/MaterialLibrary.ts';
+import { getGeos } from '../rendering/ModelFactory.ts';
 
 export type PowerUpType = 'shield' | 'magnet' | 'bigBucket';
 
@@ -150,9 +151,8 @@ export class PowerUpSystem {
 
   private showShieldVisual(): void {
     if (this.shieldMesh) return;
-    const geo = new THREE.SphereGeometry(1.2, 12, 8);
     const mat = getMaterials().shield;
-    this.shieldMesh = new THREE.Mesh(geo, mat);
+    this.shieldMesh = new THREE.Mesh(getGeos().shield, mat);
     this.shieldMesh.userData['gameObject'] = true;
     this.scene.add(this.shieldMesh);
   }
@@ -160,7 +160,6 @@ export class PowerUpSystem {
   private hideShieldVisual(): void {
     if (!this.shieldMesh) return;
     this.scene.remove(this.shieldMesh);
-    this.shieldMesh.geometry.dispose();
     this.shieldMesh = null;
   }
 

@@ -1,6 +1,7 @@
 import { Engine } from './core/Engine.ts';
 import { setupScene } from './rendering/SceneSetup.ts';
 import { getQualityTier } from './utils/DeviceDetect.ts';
+import { initMaterials } from './rendering/MaterialLibrary.ts';
 import { MenuScene } from './scenes/MenuScene.ts';
 import { GameScene } from './scenes/GameScene.ts';
 import { GameOverScene } from './scenes/GameOverScene.ts';
@@ -32,6 +33,7 @@ async function init() {
 
   setProgress(15, 'Initializing engine...');
   const quality = getQualityTier();
+  initMaterials(quality);
   const engine = new Engine(canvas);
 
   setProgress(30, 'Setting up scene...');

@@ -16,7 +16,7 @@ function createGeometries() {
     log: new THREE.CylinderGeometry(0.25, 0.25, 2.5, 6),
     branch: new THREE.CylinderGeometry(0.06, 0.08, 2.0, 4),
     bucket: new THREE.CylinderGeometry(0.8, 0.55, 1.0, 8),
-    shield: new THREE.SphereGeometry(1.2, 12, 8),
+    shield: new THREE.SphereGeometry(1.2, 8, 6),
     // Worker character
     workerHead:       new THREE.SphereGeometry(0.18, 6, 5),
     workerHatBrim:    new THREE.CylinderGeometry(0.32, 0.32, 0.04, 8),
@@ -36,8 +36,8 @@ const LANE_TOTAL_WIDTH = LANE_WIDTH * (LANE_COUNT + 1);
 
 function createSnakeGeometry(): THREE.TubeGeometry {
   const points: THREE.Vector3[] = [];
-  for (let i = 0; i <= 20; i++) {
-    const t = i / 20;
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
     points.push(
       new THREE.Vector3(
         Math.sin(t * Math.PI * 3) * 0.3,
@@ -47,10 +47,10 @@ function createSnakeGeometry(): THREE.TubeGeometry {
     );
   }
   const curve = new THREE.CatmullRomCurve3(points);
-  return new THREE.TubeGeometry(curve, 16, 0.12, 6, false);
+  return new THREE.TubeGeometry(curve, 10, 0.12, 5, false);
 }
 
-function getGeos() {
+export function getGeos() {
   if (!_geos) _geos = createGeometries();
   return _geos;
 }
