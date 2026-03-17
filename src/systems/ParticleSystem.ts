@@ -26,6 +26,8 @@ interface SpeedLine {
 }
 
 export class ParticleSystem {
+  private scene: THREE.Scene;
+
   // Burst effect
   private burstPoints: THREE.Points;
   private burstPos: Float32Array;
@@ -42,6 +44,8 @@ export class ParticleSystem {
   private lineSpawnTimer = 0;
 
   constructor(scene: THREE.Scene) {
+    this.scene = scene;
+
     // --- Burst particles ---
     this.burstGeo = new THREE.BufferGeometry();
     this.burstPos = new Float32Array(MAX_BURST * 3);
@@ -223,6 +227,8 @@ export class ParticleSystem {
   }
 
   dispose(): void {
+    this.scene.remove(this.burstPoints);
+    this.scene.remove(this.linePoints);
     this.burstGeo.dispose();
     (this.burstPoints.material as THREE.Material).dispose();
     this.lineGeo.dispose();

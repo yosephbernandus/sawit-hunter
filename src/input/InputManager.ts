@@ -17,6 +17,9 @@ export class InputManager {
   private mobileRight = false;
   private mobileAction = false;
 
+  // Mobile handlers (stored for cleanup)
+  private mobileHandlers: Array<{ el: HTMLElement; event: string; fn: EventListener }> = [];
+
   constructor(canvas: HTMLElement) {
     this.swipeDetector = new SwipeDetector(canvas);
 
@@ -24,22 +27,19 @@ export class InputManager {
     document.addEventListener('keyup', this.onKeyUp);
 
     // Mobile buttons
-    const leftBtn = document.getElementById('leftBtn');
-    const rightBtn = document.getElementById('rightBtn');
-    const duckBtn = document.getElementById('duckBtn');
+    this.bindMobileBtn('leftBtn', 'touchstart', () => { this.mobileLeft = true; });
+    this.bindMobileBtn('leftBtn', 'touchend', () => { this.mobileLeft = false; });
+    this.bindMobileBtn('rightBtn', 'touchstart', () => { this.mobileRight = true; });
+    this.bindMobileBtn('rightBtn', 'touchend', () => { this.mobileRight = false; });
+    this.bindMobileBtn('duckBtn', 'touchstart', () => { this.mobileAction = true; });
+    this.bindMobileBtn('duckBtn', 'touchend', () => { this.mobileAction = false; });
+  }
 
-    if (leftBtn) {
-      leftBtn.addEventListener('touchstart', () => { this.mobileLeft = true; }, { passive: true });
-      leftBtn.addEventListener('touchend', () => { this.mobileLeft = false; }, { passive: true });
-    }
-    if (rightBtn) {
-      rightBtn.addEventListener('touchstart', () => { this.mobileRight = true; }, { passive: true });
-      rightBtn.addEventListener('touchend', () => { this.mobileRight = false; }, { passive: true });
-    }
-    if (duckBtn) {
-      duckBtn.addEventListener('touchstart', () => { this.mobileAction = true; }, { passive: true });
-      duckBtn.addEventListener('touchend', () => { this.mobileAction = false; }, { passive: true });
-    }
+  private bindMobileBtn(id: string, event: string, fn: EventListener): void {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(event, fn, { passive: true });
+    this.mobileHandlers.push({ el, event, fn });
   }
 
   update(): void {
@@ -52,9 +52,10 @@ export class InputManager {
 
     // Swipe (consumes once)
     const swipe = this.swipeDetector.lastSwipe;
+    let swipeAction = false;
     if (swipe === 'left') this.pendingLaneChange = -1;
     else if (swipe === 'right') this.pendingLaneChange = 1;
-    else if (swipe === 'down') this.state.action = true;
+    else if (swipe === 'down') swipeAction = true;
 
     // Mobile buttons
     if (this.mobileLeft) dir = -1;
@@ -70,7 +71,7 @@ export class InputManager {
       this.state.moveDirection = 0;
     }
 
-    this.state.action = action || this.mobileAction;
+    this.state.action = action || this.mobileAction || swipeAction;
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -88,5 +89,10 @@ export class InputManager {
   dispose(): void {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    this.swipeDetector.dispose();
+    for (const { el, event, fn } of this.mobileHandlers) {
+      el.removeEventListener(event, fn);
+    }
+    this.mobileHandlers.length = 0;
   }
 }

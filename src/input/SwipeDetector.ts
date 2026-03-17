@@ -5,6 +5,7 @@ const SWIPE_TIME_LIMIT = 350; // ms
 const DEBOUNCE_MS = 180;
 
 export class SwipeDetector {
+  private element: HTMLElement;
   private startX = 0;
   private startY = 0;
   private startTime = 0;
@@ -12,6 +13,7 @@ export class SwipeDetector {
   private _lastSwipe: SwipeDirection = null;
 
   constructor(element: HTMLElement) {
+    this.element = element;
     element.addEventListener('touchstart', this.onTouchStart, { passive: true });
     element.addEventListener('touchend', this.onTouchEnd, { passive: true });
   }
@@ -29,6 +31,11 @@ export class SwipeDetector {
     this.startY = touch.clientY;
     this.startTime = performance.now();
   };
+
+  dispose(): void {
+    this.element.removeEventListener('touchstart', this.onTouchStart);
+    this.element.removeEventListener('touchend', this.onTouchEnd);
+  }
 
   private onTouchEnd = (e: TouchEvent): void => {
     const touch = e.changedTouches[0];

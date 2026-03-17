@@ -45,6 +45,7 @@ export class GameScene implements IGameScene {
   private gameOver = false;
   private paused = false;
   private pauseKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+  private resumeHandler: (() => void) | null = null;
 
   private onGameOver: (score: number, distance: number) => void;
 
@@ -162,9 +163,12 @@ export class GameScene implements IGameScene {
     };
     document.addEventListener('keydown', this.pauseKeyHandler);
 
-    document.getElementById('resumeBtn')?.addEventListener('click', () => {
-      if (this.paused) this.togglePause();
-    });
+    // Bind resume button — remove old listener first to prevent stacking
+    const resumeBtn = document.getElementById('resumeBtn');
+    if (resumeBtn) {
+      this.resumeHandler = () => { if (this.paused) this.togglePause(); };
+      resumeBtn.addEventListener('click', this.resumeHandler);
+    }
   }
 
   private togglePause(): void {
@@ -237,6 +241,10 @@ export class GameScene implements IGameScene {
     if (this.pauseKeyHandler) {
       document.removeEventListener('keydown', this.pauseKeyHandler);
       this.pauseKeyHandler = null;
+    }
+    if (this.resumeHandler) {
+      document.getElementById('resumeBtn')?.removeEventListener('click', this.resumeHandler);
+      this.resumeHandler = null;
     }
   }
 }

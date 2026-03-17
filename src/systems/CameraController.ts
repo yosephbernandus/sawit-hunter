@@ -6,6 +6,8 @@ export class CameraController {
   private camera: THREE.PerspectiveCamera;
   private target: THREE.Object3D;
 
+  private lookTarget = new THREE.Vector3();
+
   // Shake effect
   private shakeIntensity = 0;
   private shakeDuration = 0;
@@ -30,12 +32,12 @@ export class CameraController {
     this.camera.position.z = lerp(this.camera.position.z, desiredZ, lerpFactor);
 
     // Look ahead of the player
-    const lookTarget = new THREE.Vector3(
+    this.lookTarget.set(
       this.target.position.x * 0.15,
       1.5,
       this.target.position.z - CAMERA_LOOK_AHEAD,
     );
-    this.camera.lookAt(lookTarget);
+    this.camera.lookAt(this.lookTarget);
 
     // Screen shake
     if (this.shakeTimer > 0) {

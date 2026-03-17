@@ -30,13 +30,14 @@ async function init() {
 
   const menuScene = new MenuScene(engine.camera, engine.threeScene, audio);
   const gameOverScene = new GameOverScene(audio);
+  let currentPlayerName = 'Player';
   const gameScene = new GameScene(
     engine.threeScene,
     engine.camera,
     quality,
     audio,
     (score, distance) => {
-      gameOverScene.setResults(score, distance);
+      gameOverScene.setResults(score, distance, currentPlayerName);
       engine.sceneManager.switch('gameOver');
     },
   );
@@ -50,8 +51,8 @@ async function init() {
   // UI wiring
   document.getElementById('playBtn')!.addEventListener('click', () => {
     const nameInput = document.getElementById('usernameInput') as HTMLInputElement;
-    const name = nameInput.value.trim() || 'Player';
-    gameScene.setPlayerName(name);
+    currentPlayerName = nameInput.value.trim() || 'Player';
+    gameScene.setPlayerName(currentPlayerName);
     engine.sceneManager.switch('game');
   });
 
@@ -63,6 +64,13 @@ async function init() {
     if (e.key === 'Enter') {
       document.getElementById('playBtn')!.click();
     }
+  });
+
+  // Mute toggle
+  const muteBtn = document.getElementById('muteBtn')!;
+  muteBtn.addEventListener('click', () => {
+    audio.toggleMute();
+    muteBtn.textContent = audio.muted ? '\u{1F507}' : '\u{1F50A}';
   });
 
   setProgress(100, 'Ready!');

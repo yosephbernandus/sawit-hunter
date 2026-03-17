@@ -157,6 +157,23 @@
         <button id="restartBtn" class="game-btn restart-btn">
           <span class="btn-text">PLAY AGAIN</span>
         </button>
+        <div class="leaderboard">
+          <h3 class="lb-title">LEADERBOARD</h3>
+          <div id="leaderboardStatus" class="lb-status">Loading...</div>
+          <div class="lb-scroll">
+            <table class="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Score</th>
+                  <th>Dist</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
         <div class="support-cta">
           <p class="support-text">
             Building projects like this is easy when you have access to
@@ -174,6 +191,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Mute toggle -->
+    <button id="muteBtn" class="mute-btn" aria-label="Toggle sound">&#128266;</button>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
