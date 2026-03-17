@@ -62,6 +62,19 @@ export class MenuScene implements IGameScene {
     document.getElementById('mobileControls')?.classList.add('hidden');
     document.getElementById('gameOverScreen')?.classList.add('hidden');
 
+    // High score
+    const hs = localStorage.getItem('sawitRunnerHighScore') ?? '0';
+    const hsDisplay = document.getElementById('highScoreDisplay');
+    if (hsDisplay) {
+      hsDisplay.textContent = parseInt(hs, 10) > 0 ? `High Score: ${hs}` : '';
+    }
+
+    // Hide controls hint on mobile
+    const hint = document.getElementById('controlsHint');
+    if (hint) {
+      hint.style.display = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'none' : '';
+    }
+
     // Music
     this.audio.playMusic('menu');
   }

@@ -43,6 +43,8 @@ export class GameScene implements IGameScene {
   private playerMesh!: THREE.Group;
   private playerName = 'Player';
   private gameOver = false;
+  private paused = false;
+  private pauseKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
   private onGameOver: (score: number, distance: number) => void;
 
@@ -104,9 +106,10 @@ export class GameScene implements IGameScene {
 
     // --- Event wiring ---
 
-    this.eventBus.on('SAWIT_CAUGHT', ({ position }) => {
-      this.particles.burst(position.x, position.y, position.z);
+    this.eventBus.on('SAWIT_CAUGHT', ({ points, position }) => {
+      this.particles.burst(position.x, position.y, position.z, 15, points > 10);
       this.audio.play('catch');
+      this.showScorePopup(points);
     });
 
     this.eventBus.on('POWERUP_COLLECTED', () => {
@@ -126,12 +129,13 @@ export class GameScene implements IGameScene {
     this.eventBus.on('OBSTACLE_HIT', () => {
       if (this.gameOver) return;
       this.gameOver = true;
-      this.audio.play('death');
+      this.audio.stopAllSfx(); // stop any lingering catch/milestone sounds
       this.audio.stopMusic();
+      this.audio.play('death');
       this.cameraCtrl.shake(0.8, 0.4);
       setTimeout(() => {
         this.onGameOver(this.scoreManager.getScore(), this.distance);
-      }, 600);
+      }, 800); // longer delay so death sound finishes before game over music
     });
 
     // UI
@@ -147,8 +151,30 @@ export class GameScene implements IGameScene {
 
     this.cameraCtrl.snapToTarget();
 
-    // Stop menu music (gameplay has no BGM for now, keeps it tense)
+    // Stop menu music
     this.audio.stopMusic();
+
+    // Pause handler
+    this.pauseKeyHandler = (e: KeyboardEvent) => {
+      if (e.code === 'Escape' && !this.gameOver) {
+        this.togglePause();
+      }
+    };
+    document.addEventListener('keydown', this.pauseKeyHandler);
+
+    document.getElementById('resumeBtn')?.addEventListener('click', () => {
+      if (this.paused) this.togglePause();
+    });
+  }
+
+  private togglePause(): void {
+    this.paused = !this.paused;
+    const overlay = document.getElementById('pauseOverlay');
+    if (this.paused) {
+      overlay?.classList.remove('hidden');
+    } else {
+      overlay?.classList.add('hidden');
+    }
   }
 
   update(dt: number): void {
@@ -157,6 +183,8 @@ export class GameScene implements IGameScene {
       this.particles.update(dt);
       return;
     }
+
+    if (this.paused) return;
 
     const speed = this.difficulty.getSpeed();
 
@@ -169,8 +197,27 @@ export class GameScene implements IGameScene {
     this.powerUps.update(dt);
     this.collision.update();
     this.distance += speed * dt;
-    this.particles.update(dt);
+    this.particles.update(dt, speed, this.playerMesh.position.x, this.playerMesh.position.z);
     this.cameraCtrl.update(dt);
+
+    // Update distance display
+    document.getElementById('hudDistance')!.textContent = `${Math.floor(this.distance)}m`;
+  }
+
+  private showScorePopup(points: number): void {
+    const container = document.getElementById('scorePopups');
+    if (!container) return;
+
+    const el = document.createElement('div');
+    el.className = points > 10 ? 'score-popup golden' : 'score-popup';
+    el.textContent = `+${points}`;
+
+    // Position near center of screen
+    el.style.left = `${45 + Math.random() * 10}%`;
+    el.style.top = `${35 + Math.random() * 10}%`;
+
+    container.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
   }
 
   exit(): void {
@@ -184,5 +231,12 @@ export class GameScene implements IGameScene {
     this.particles?.dispose();
     this.powerUps?.dispose();
     this.eventBus?.clear();
+    const popups = document.getElementById('scorePopups');
+    if (popups) popups.innerHTML = '';
+    document.getElementById('pauseOverlay')?.classList.add('hidden');
+    if (this.pauseKeyHandler) {
+      document.removeEventListener('keydown', this.pauseKeyHandler);
+      this.pauseKeyHandler = null;
+    }
   }
 }

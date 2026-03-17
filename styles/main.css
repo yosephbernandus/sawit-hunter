@@ -202,6 +202,24 @@ input:focus {
     0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Controls Hint */
+.controls-hint {
+  margin-top: 20px;
+  font-size: clamp(10px, 1.8vw, 13px);
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.hint-keys {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(8px, 1.5vw, 11px);
+}
+
 /* High Score */
 .high-score-display {
   margin-top: 30px;
@@ -268,6 +286,46 @@ input:focus {
   color: var(--accent-orange);
   font-size: clamp(16px, 2.5vw, 24px);
   text-shadow: 0 0 8px var(--glow-orange);
+}
+
+.hud-right {
+  gap: 8px;
+}
+
+.distance-box {
+  border-color: var(--accent-yellow);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* Score popups */
+.score-popups {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.score-popup {
+  position: absolute;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 18px;
+  color: var(--accent-yellow);
+  text-shadow: 0 0 8px var(--glow-orange), 2px 2px 0 rgba(0,0,0,0.5);
+  animation: popupFloat 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.score-popup.golden {
+  color: var(--accent-orange);
+  font-size: 22px;
+}
+
+@keyframes popupFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
 }
 
 /* Powerup Indicator */

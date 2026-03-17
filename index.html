@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
@@ -83,6 +83,12 @@
         <span class="btn-text">START</span>
       </button>
       <div class="high-score-display" id="highScoreDisplay"></div>
+      <div class="controls-hint" id="controlsHint">
+        <span class="hint-keys">A/D</span> or
+        <span class="hint-keys">&#9664; &#9654;</span> Move &nbsp;&middot;&nbsp;
+        <span class="hint-keys">SPACE</span> Duck &nbsp;&middot;&nbsp;
+        <span class="hint-keys">ESC</span> Pause
+      </div>
     </div>
 
     <!-- HUD (in-game) -->
@@ -104,7 +110,26 @@
           <div class="hud-label">HIGH</div>
           <div class="hud-value" id="hudHighScore">0</div>
         </div>
+        <div class="hud-box distance-box">
+          <div class="hud-label">DIST</div>
+          <div class="hud-value" id="hudDistance">0m</div>
+        </div>
       </div>
+    </div>
+
+    <!-- Score popup container -->
+    <div id="scorePopups" class="score-popups"></div>
+
+    <!-- Pause overlay -->
+    <div
+      id="pauseOverlay"
+      class="overlay hidden"
+      style="background: rgba(0, 0, 0, 0.7)"
+    >
+      <h2 class="game-over-title" style="animation: none">PAUSED</h2>
+      <button id="resumeBtn" class="game-btn" style="margin-top: 20px">
+        <span class="btn-text">RESUME</span>
+      </button>
     </div>
 
     <!-- Powerup indicator -->
