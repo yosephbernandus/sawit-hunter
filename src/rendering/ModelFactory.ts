@@ -17,6 +17,17 @@ function createGeometries() {
     branch: new THREE.CylinderGeometry(0.06, 0.08, 2.0, 4),
     bucket: new THREE.CylinderGeometry(0.8, 0.55, 1.0, 8),
     shield: new THREE.SphereGeometry(1.2, 12, 8),
+    // Worker character
+    workerHead:       new THREE.SphereGeometry(0.18, 6, 5),
+    workerHatBrim:    new THREE.CylinderGeometry(0.32, 0.32, 0.04, 8),
+    workerHatCrown:   new THREE.ConeGeometry(0.20, 0.22, 8),
+    workerTorso:      new THREE.CylinderGeometry(0.22, 0.26, 0.55, 6),
+    workerHips:       new THREE.CylinderGeometry(0.26, 0.22, 0.22, 6),
+    workerUpperArm:   new THREE.CylinderGeometry(0.07, 0.08, 0.28, 4),
+    workerForearm:    new THREE.CylinderGeometry(0.06, 0.07, 0.26, 4),
+    workerThigh:      new THREE.CylinderGeometry(0.09, 0.10, 0.32, 5),
+    workerShin:       new THREE.CylinderGeometry(0.08, 0.09, 0.30, 5),
+    workerHeldBucket: new THREE.CylinderGeometry(0.14, 0.10, 0.22, 7),
   };
 }
 
@@ -131,17 +142,104 @@ export function createBranch(): THREE.Group {
   return group;
 }
 
-export function createBucket(): THREE.Group {
+export interface WorkerRefs {
+  torso: THREE.Mesh;
+  head: THREE.Mesh;
+  leftLegGroup: THREE.Group;
+  rightLegGroup: THREE.Group;
+  leftKneeGroup: THREE.Group;
+  rightKneeGroup: THREE.Group;
+  leftArmGroup: THREE.Group;
+  rightArmGroup: THREE.Group;
+  leftElbowGroup: THREE.Group;
+  rightElbowGroup: THREE.Group;
+}
+
+export function createWorker(): { group: THREE.Group; refs: WorkerRefs } {
   const mats = getMaterials();
   const geos = getGeos();
   const group = new THREE.Group();
 
-  const body = new THREE.Mesh(geos.bucket, mats.bucket);
-  body.castShadow = true;
-  body.receiveShadow = true;
-  group.add(body);
+  const addMesh = (geo: THREE.BufferGeometry, mat: THREE.Material, parent: THREE.Object3D, x: number, y: number, z: number): THREE.Mesh => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    parent.add(m);
+    return m;
+  };
 
-  return group;
+  // Hips
+  addMesh(geos.workerHips, mats.workerPants, group, 0, 0.55, 0);
+
+  // Torso
+  const torso = addMesh(geos.workerTorso, mats.workerShirt, group, 0, 0.83, 0);
+
+  // Head
+  const head = addMesh(geos.workerHead, mats.workerSkin, group, 0, 1.35, 0);
+
+  // Straw hat
+  addMesh(geos.workerHatBrim,  mats.workerHat, group, 0, 1.47, 0);
+  addMesh(geos.workerHatCrown, mats.workerHat, group, 0, 1.60, 0);
+
+  // --- Left arm ---
+  const leftArmGroup = new THREE.Group();
+  leftArmGroup.position.set(-0.30, 1.10, 0);
+  group.add(leftArmGroup);
+  addMesh(geos.workerUpperArm, mats.workerShirt, leftArmGroup, 0, -0.14, 0);
+  const leftElbowGroup = new THREE.Group();
+  leftElbowGroup.position.set(0, -0.28, 0);
+  leftArmGroup.add(leftElbowGroup);
+  addMesh(geos.workerForearm, mats.workerSkin, leftElbowGroup, 0, -0.13, 0);
+
+  // --- Right arm ---
+  const rightArmGroup = new THREE.Group();
+  rightArmGroup.position.set(0.30, 1.10, 0);
+  group.add(rightArmGroup);
+  addMesh(geos.workerUpperArm, mats.workerShirt, rightArmGroup, 0, -0.14, 0);
+  const rightElbowGroup = new THREE.Group();
+  rightElbowGroup.position.set(0, -0.28, 0);
+  rightArmGroup.add(rightElbowGroup);
+  addMesh(geos.workerForearm, mats.workerSkin, rightElbowGroup, 0, -0.13, 0);
+
+  // Small bucket held in right hand
+  const heldBucket = addMesh(geos.workerHeldBucket, mats.bucket, rightElbowGroup, 0.05, -0.28, 0);
+  heldBucket.rotation.z = 0.15;
+
+  // --- Left leg ---
+  const leftLegGroup = new THREE.Group();
+  leftLegGroup.position.set(-0.12, 0.55, 0);
+  group.add(leftLegGroup);
+  addMesh(geos.workerThigh, mats.workerPants, leftLegGroup, 0, -0.16, 0);
+  const leftKneeGroup = new THREE.Group();
+  leftKneeGroup.position.set(0, -0.32, 0);
+  leftLegGroup.add(leftKneeGroup);
+  addMesh(geos.workerShin, mats.workerPants, leftKneeGroup, 0, -0.15, 0);
+
+  // --- Right leg ---
+  const rightLegGroup = new THREE.Group();
+  rightLegGroup.position.set(0.12, 0.55, 0);
+  group.add(rightLegGroup);
+  addMesh(geos.workerThigh, mats.workerPants, rightLegGroup, 0, -0.16, 0);
+  const rightKneeGroup = new THREE.Group();
+  rightKneeGroup.position.set(0, -0.32, 0);
+  rightLegGroup.add(rightKneeGroup);
+  addMesh(geos.workerShin, mats.workerPants, rightKneeGroup, 0, -0.15, 0);
+
+  return {
+    group,
+    refs: {
+      torso,
+      head,
+      leftLegGroup,
+      rightLegGroup,
+      leftKneeGroup,
+      rightKneeGroup,
+      leftArmGroup,
+      rightArmGroup,
+      leftElbowGroup,
+      rightElbowGroup,
+    },
+  };
 }
 
 export function createGroundChunk(): THREE.Group {

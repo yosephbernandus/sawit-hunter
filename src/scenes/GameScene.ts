@@ -13,7 +13,8 @@ import { ParticleSystem } from '../systems/ParticleSystem.ts';
 import { PowerUpSystem } from '../systems/PowerUpSystem.ts';
 import { EventBus } from '../core/EventBus.ts';
 import type { AudioManager } from '../audio/AudioManager.ts';
-import { createBucket } from '../rendering/ModelFactory.ts';
+import { createWorker } from '../rendering/ModelFactory.ts';
+import { WorkerAnimator } from '../systems/WorkerAnimator.ts';
 import { BASE_SPEED } from '../core/Constants.ts';
 import { isMobile } from '../utils/DeviceDetect.ts';
 import type { QualityTier } from '../utils/DeviceDetect.ts';
@@ -47,6 +48,7 @@ export class GameScene implements IGameScene {
   private pauseKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   private resumeHandler: (() => void) | null = null;
 
+  private workerAnimator: WorkerAnimator | null = null;
   private onGameOver: (score: number, distance: number) => void;
 
   constructor(
@@ -81,7 +83,8 @@ export class GameScene implements IGameScene {
     this.eventBus = new EventBus();
 
     // Player
-    this.playerMesh = createBucket();
+    const { group: workerGroup, refs: workerRefs } = createWorker();
+    this.playerMesh = workerGroup;
     this.playerMesh.userData['gameObject'] = true;
     this.scene.add(this.playerMesh);
 
@@ -90,7 +93,8 @@ export class GameScene implements IGameScene {
     this.input = new InputManager(canvas);
 
     // Core systems
-    this.player = new PlayerController(this.playerMesh, this.input);
+    this.workerAnimator = new WorkerAnimator(workerRefs);
+    this.player = new PlayerController(this.playerMesh, this.input, this.workerAnimator);
     this.cameraCtrl = new CameraController(this.camera, this.playerMesh);
     this.world = new WorldGenerator(this.scene, this.quality);
     this.collectibles = new CollectibleManager(this.scene);
@@ -130,13 +134,14 @@ export class GameScene implements IGameScene {
     this.eventBus.on('OBSTACLE_HIT', () => {
       if (this.gameOver) return;
       this.gameOver = true;
-      this.audio.stopAllSfx(); // stop any lingering catch/milestone sounds
+      this.workerAnimator?.startDeath();
+      this.audio.stopAllSfx();
       this.audio.stopMusic();
       this.audio.play('death');
-      this.cameraCtrl.shake(0.8, 0.4);
+      this.cameraCtrl.shake(0.8, 0.5);
       setTimeout(() => {
         this.onGameOver(this.scoreManager.getScore(), this.distance);
-      }, 800); // longer delay so death sound finishes before game over music
+      }, 1200); // extra time for death animation to play out
     });
 
     // UI
@@ -183,6 +188,7 @@ export class GameScene implements IGameScene {
 
   update(dt: number): void {
     if (this.gameOver) {
+      this.workerAnimator?.update(dt, this.playerMesh.position.x, this.playerMesh.position.x, false, false, 0);
       this.cameraCtrl.update(dt);
       this.particles.update(dt);
       return;

@@ -69,6 +69,11 @@ export class CollisionSystem {
     for (const o of this.obstacles.getActive()) {
       const dz = Math.abs(o.mesh.position.z - playerZ);
       if (o.lane === playerLane && dz < OBSTACLE_Z_RANGE) {
+        // Jumping clears ground obstacles (snake, log)
+        if ((o.type === 'snake' || o.type === 'log') && this.player.jumpHeight > 0.6) {
+          continue;
+        }
+        // Ducking clears high obstacles (branch)
         if (o.type === 'branch' && this.player.isDucking) {
           continue;
         }

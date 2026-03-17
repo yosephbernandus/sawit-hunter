@@ -392,6 +392,12 @@ input:focus {
     0 1px 0 var(--bg-dark);
 }
 
+.control-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Game Over */
 .game-over-content {
   text-align: center;

@@ -34,6 +34,10 @@ function createMaterials() {
       wireframe: true,
     }),
     path: new THREE.MeshLambertMaterial({ color: 0x8b7355 }),
+    workerSkin:  new THREE.MeshLambertMaterial({ color: C.WORKER_SKIN_COLOR }),
+    workerShirt: new THREE.MeshLambertMaterial({ color: C.WORKER_SHIRT_COLOR }),
+    workerPants: new THREE.MeshLambertMaterial({ color: C.WORKER_PANTS_COLOR }),
+    workerHat:   new THREE.MeshLambertMaterial({ color: C.WORKER_HAT_COLOR }),
   } as const;
 }
 

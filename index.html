@@ -84,9 +84,9 @@
       </button>
       <div class="high-score-display" id="highScoreDisplay"></div>
       <div class="controls-hint" id="controlsHint">
-        <span class="hint-keys">A/D</span> or
-        <span class="hint-keys">&#9664; &#9654;</span> Move &nbsp;&middot;&nbsp;
-        <span class="hint-keys">SPACE</span> Duck &nbsp;&middot;&nbsp;
+        <span class="hint-keys">A/D</span> Move &nbsp;&middot;&nbsp;
+        <span class="hint-keys">W/&#9650;</span> Jump &nbsp;&middot;&nbsp;
+        <span class="hint-keys">S/&#9660;</span> Duck &nbsp;&middot;&nbsp;
         <span class="hint-keys">ESC</span> Pause
       </div>
     </div>
@@ -141,7 +141,10 @@
     <!-- Mobile Controls -->
     <div id="mobileControls" class="mobile-controls hidden">
       <button class="control-btn" id="leftBtn">&#9664;</button>
-      <button class="control-btn" id="duckBtn">&#9660;</button>
+      <div class="control-col">
+        <button class="control-btn" id="jumpBtn">&#9650;</button>
+        <button class="control-btn" id="duckBtn">&#9660;</button>
+      </div>
       <button class="control-btn" id="rightBtn">&#9654;</button>
     </div>
 

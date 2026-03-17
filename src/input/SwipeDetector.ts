@@ -1,4 +1,4 @@
-export type SwipeDirection = 'left' | 'right' | 'down' | null;
+export type SwipeDirection = 'left' | 'right' | 'up' | 'down' | null;
 
 const SWIPE_THRESHOLD = 40; // px
 const SWIPE_TIME_LIMIT = 350; // ms
@@ -54,8 +54,8 @@ export class SwipeDetector {
     if (absDx > SWIPE_THRESHOLD && absDx > absDy) {
       this._lastSwipe = dx > 0 ? 'right' : 'left';
       this.lastSwipeTime = now;
-    } else if (absDy > SWIPE_THRESHOLD && dy > 0) {
-      this._lastSwipe = 'down';
+    } else if (absDy > SWIPE_THRESHOLD) {
+      this._lastSwipe = dy > 0 ? 'down' : 'up';
       this.lastSwipeTime = now;
     }
   };
