@@ -17,7 +17,7 @@ import { createWorker } from '../rendering/ModelFactory.ts';
 import { WorkerAnimator } from '../systems/WorkerAnimator.ts';
 import { BiomeManager } from '../systems/BiomeManager.ts';
 import { MissionManager } from '../systems/MissionManager.ts';
-import { CoinManager } from '../systems/CoinManager.ts';
+import type { CoinManager } from '../systems/CoinManager.ts';
 import type { UpgradeManager } from '../systems/UpgradeManager.ts';
 import { SHIELD_DURATION, MAGNET_RANGE } from '../core/Constants.ts';
 import { isMobile } from '../utils/DeviceDetect.ts';
@@ -65,6 +65,7 @@ export class GameScene implements IGameScene {
   private workerAnimator: WorkerAnimator | null = null;
   private onGameOver: (score: number, distance: number) => void;
   private upgradeManager: UpgradeManager;
+  private globalCoins: CoinManager;
 
   constructor(
     scene: THREE.Scene,
@@ -72,6 +73,7 @@ export class GameScene implements IGameScene {
     quality: QualityTier,
     audio: AudioManager,
     upgradeManager: UpgradeManager,
+    globalCoins: CoinManager,
     onGameOver: (score: number, distance: number) => void,
   ) {
     this.scene = scene;
@@ -79,6 +81,7 @@ export class GameScene implements IGameScene {
     this.quality = quality;
     this.audio = audio;
     this.upgradeManager = upgradeManager;
+    this.globalCoins = globalCoins;
     this.onGameOver = onGameOver;
   }
 
@@ -127,8 +130,9 @@ export class GameScene implements IGameScene {
     );
     this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
 
-    // Missions & coins
-    this.coins = new CoinManager(this.eventBus);
+    // Missions & coins — reuse global coin manager, rebind to game event bus
+    this.coins = this.globalCoins;
+    this.coins.setEventBus(this.eventBus);
     this.coins.setMultiplier(1 + this.upgradeManager.getEffectValue('coinMultiplier'));
     this.missions = new MissionManager(this.eventBus, this.coins);
 
@@ -163,9 +167,10 @@ export class GameScene implements IGameScene {
 
     this.eventBus.on('OBSTACLE_HIT', () => {
       if (this.gameOver) return;
+      if (this.invincibleTimer > 0) return; // still invincible from extra life
 
       // Extra life: survive one hit
-      if (this.extraLives > 0 && this.invincibleTimer <= 0) {
+      if (this.extraLives > 0) {
         this.extraLives--;
         this.invincibleTimer = 2; // 2s invincibility
         this.cameraCtrl.shake(0.4, 0.2);

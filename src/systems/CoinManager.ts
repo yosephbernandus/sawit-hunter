@@ -12,6 +12,10 @@ export class CoinManager {
     this.balance = parseInt(localStorage.getItem(STORAGE_KEY) ?? '0', 10);
   }
 
+  setEventBus(eventBus: EventBus): void {
+    this.eventBus = eventBus;
+  }
+
   getBalance(): number {
     return this.balance;
   }

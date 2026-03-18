@@ -25,6 +25,9 @@ export class BiomeManager {
   private fromFog = 0;
   private targetBiome: BiomeConfig | null = null;
 
+  // Cached target color map (avoid allocation per frame)
+  private targetColorMap: Partial<Record<LerpableMaterialKey, number>> | null = null;
+
   constructor(scene: THREE.Scene, eventBus: EventBus, world: WorldGenerator) {
     this.scene = scene;
     this.eventBus = eventBus;
@@ -36,25 +39,16 @@ export class BiomeManager {
   }
 
   update(dt: number, distance: number): void {
-    // Check if we should start a new transition
     if (!this.transitioning && distance - this.lastTransitionDistance >= BIOME_TRANSITION_DISTANCE) {
       this.startTransition();
     }
 
-    // Advance transition
     if (this.transitioning) {
       this.transitionTimer += dt;
       const alpha = Math.min(this.transitionTimer / BIOME_TRANSITION_DURATION, 1);
 
-      // Lerp materials
-      lerpColors(this.fromColors!, {
-        ground: this.targetBiome!.groundColor,
-        path: this.targetBiome!.pathColor,
-        leaf: this.targetBiome!.leafColor,
-        bark: this.targetBiome!.barkColor,
-      }, alpha);
+      lerpColors(this.fromColors!, this.targetColorMap!, alpha);
 
-      // Lerp sky/fog
       lerpEnvironment(
         this.scene,
         this.fromSky, this.fromFog,
@@ -66,6 +60,7 @@ export class BiomeManager {
         this.transitioning = false;
         this.fromColors = null;
         this.targetBiome = null;
+        this.targetColorMap = null;
         this.eventBus.emit('BIOME_ENTERED', {
           biome: this.currentBiome.name,
           index: this.currentIndex,
@@ -80,14 +75,20 @@ export class BiomeManager {
     this.targetBiome = BIOMES[this.currentIndex]!;
     this.lastTransitionDistance += BIOME_TRANSITION_DISTANCE;
 
-    // Snapshot current colors as lerp start
     this.fromColors = snapshotColors(LERP_KEYS);
     this.fromSky = prevBiome.skyColor;
     this.fromFog = prevBiome.fogColor;
     this.transitionTimer = 0;
     this.transitioning = true;
 
-    // Swap tree factory immediately — new trees appear ahead
+    // Cache target color map once per transition
+    this.targetColorMap = {
+      ground: this.targetBiome.groundColor,
+      path: this.targetBiome.pathColor,
+      leaf: this.targetBiome.leafColor,
+      bark: this.targetBiome.barkColor,
+    };
+
     this.world.setTreeFactory(this.targetBiome.treeFactory);
   }
 }

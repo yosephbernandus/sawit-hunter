@@ -12,6 +12,12 @@ export interface ActiveObstacle {
   type: ObstacleType;
 }
 
+/** A spawn pattern — array of { lane, type } to place at the same Z */
+interface SpawnEntry {
+  lane: number;
+  type: ObstacleType;
+}
+
 export class ObstacleManager {
   private scene: THREE.Scene;
   private active: ActiveObstacle[] = [];
@@ -19,21 +25,22 @@ export class ObstacleManager {
   private spawnInterval = OBSTACLE_SPAWN_INTERVAL_BASE;
   private spawnAheadZ = -70;
   private enabledTypes: ObstacleType[] = [];
+  private multiLaneChance = 0; // 0–1, set by DifficultyManager
 
   private snakePool = new ObjectPool<THREE.Mesh>(
     () => createSnake(),
     (m) => { m.visible = true; },
-    3,
+    6,
   );
   private logPool = new ObjectPool<THREE.Mesh>(
     () => createLog(),
     (m) => { m.visible = true; },
-    3,
+    6,
   );
   private branchPool = new ObjectPool<THREE.Group>(
     () => createBranch(),
     (m) => { m.visible = true; },
-    2,
+    4,
   );
 
   constructor(scene: THREE.Scene) {
@@ -48,13 +55,18 @@ export class ObstacleManager {
     this.spawnInterval = interval;
   }
 
+  /** Set chance (0–1) of spawning multi-lane patterns */
+  setMultiLaneChance(chance: number): void {
+    this.multiLaneChance = chance;
+  }
+
   update(dt: number, speed: number, playerZ: number): void {
     if (this.enabledTypes.length === 0) return;
 
     this.spawnTimer -= dt;
 
     if (this.spawnTimer <= 0) {
-      this.spawn(playerZ);
+      this.spawnPattern(playerZ);
       this.spawnTimer = this.spawnInterval;
     }
 
@@ -73,20 +85,92 @@ export class ObstacleManager {
     }
   }
 
-  private spawn(playerZ: number): void {
-    const lane = randomInt(0, 2);
-    const type = randomChoice(this.enabledTypes);
-    const mesh = this.acquireMesh(type);
-
-    const x = LANE_POSITIONS[lane]!;
-    const z = playerZ + this.spawnAheadZ;
-
-    if (type === 'branch') {
-      mesh.position.set(x, 0, z);
+  private spawnPattern(playerZ: number): void {
+    // Decide: single obstacle or multi-lane pattern
+    if (Math.random() < this.multiLaneChance && this.enabledTypes.length > 0) {
+      const pattern = this.generatePattern();
+      for (const entry of pattern) {
+        this.spawnOne(entry.lane, entry.type, playerZ);
+      }
     } else {
-      mesh.position.set(x, 0, z);
+      // Single obstacle (original behavior)
+      const lane = randomInt(0, 2);
+      const type = randomChoice(this.enabledTypes);
+      this.spawnOne(lane, type, playerZ);
+    }
+  }
+
+  private generatePattern(): SpawnEntry[] {
+    const groundTypes = this.enabledTypes.filter((t) => t === 'snake' || t === 'log');
+    const hasBranch = this.enabledTypes.includes('branch');
+
+    // Pick a random pattern type
+    const patterns: (() => SpawnEntry[])[] = [];
+
+    // Pattern: 2 ground obstacles in different lanes (must pick empty lane)
+    if (groundTypes.length > 0) {
+      patterns.push(() => {
+        const lanes = [0, 1, 2];
+        const l1 = lanes.splice(randomInt(0, lanes.length - 1), 1)[0]!;
+        const l2 = lanes[randomInt(0, lanes.length - 1)]!;
+        const t = randomChoice(groundTypes);
+        return [
+          { lane: l1, type: t },
+          { lane: l2, type: t },
+        ];
+      });
     }
 
+    // Pattern: ground + branch in different lanes (jump one, duck the other)
+    if (groundTypes.length > 0 && hasBranch) {
+      patterns.push(() => {
+        const l1 = randomInt(0, 2);
+        let l2 = randomInt(0, 2);
+        while (l2 === l1) l2 = randomInt(0, 2);
+        return [
+          { lane: l1, type: randomChoice(groundTypes) },
+          { lane: l2, type: 'branch' },
+        ];
+      });
+    }
+
+    // Pattern: 2 branches in different lanes (must find the gap)
+    if (hasBranch) {
+      patterns.push(() => {
+        const lanes = [0, 1, 2];
+        const l1 = lanes.splice(randomInt(0, lanes.length - 1), 1)[0]!;
+        const l2 = lanes[randomInt(0, lanes.length - 1)]!;
+        return [
+          { lane: l1, type: 'branch' as ObstacleType },
+          { lane: l2, type: 'branch' as ObstacleType },
+        ];
+      });
+    }
+
+    // Pattern: ground in 2 lanes (must jump in the 3rd or pick 3rd lane)
+    if (groundTypes.length > 0) {
+      patterns.push(() => {
+        const safeLane = randomInt(0, 2);
+        const t = randomChoice(groundTypes);
+        return [0, 1, 2]
+          .filter((l) => l !== safeLane)
+          .map((l) => ({ lane: l, type: t }));
+      });
+    }
+
+    if (patterns.length === 0) {
+      // Fallback: single obstacle
+      return [{ lane: randomInt(0, 2), type: randomChoice(this.enabledTypes) }];
+    }
+
+    return randomChoice(patterns)();
+  }
+
+  private spawnOne(lane: number, type: ObstacleType, playerZ: number): void {
+    const mesh = this.acquireMesh(type);
+    const x = LANE_POSITIONS[lane]!;
+    const z = playerZ + this.spawnAheadZ;
+    mesh.position.set(x, 0, z);
     mesh.userData['gameObject'] = true;
     this.scene.add(mesh);
     this.active.push({ mesh, lane, type });

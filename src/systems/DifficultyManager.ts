@@ -11,6 +11,11 @@ import {
   OBSTACLE_SPAWN_INTERVAL_MIN,
 } from '../core/Constants.ts';
 
+// Multi-lane patterns start appearing at this score and ramp to full at this score
+const MULTI_LANE_START_SCORE = 300;
+const MULTI_LANE_MAX_SCORE = 1000;
+const MULTI_LANE_MAX_CHANCE = 0.5; // 50% of spawns are patterns at peak
+
 export class DifficultyManager {
   private currentSpeed = BASE_SPEED;
   private obstacles: ObstacleManager;
@@ -47,6 +52,17 @@ export class DifficultyManager {
         progress * (OBSTACLE_SPAWN_INTERVAL_BASE - OBSTACLE_SPAWN_INTERVAL_MIN);
       this.obstacles.setSpawnInterval(interval);
     }
+
+    // Multi-lane pattern chance ramps up
+    if (this.currentScore >= MULTI_LANE_START_SCORE) {
+      const progress = Math.min(
+        (this.currentScore - MULTI_LANE_START_SCORE) / (MULTI_LANE_MAX_SCORE - MULTI_LANE_START_SCORE),
+        1,
+      );
+      this.obstacles.setMultiLaneChance(progress * MULTI_LANE_MAX_CHANCE);
+    } else {
+      this.obstacles.setMultiLaneChance(0);
+    }
   }
 
   getSpeed(): number {
@@ -58,5 +74,6 @@ export class DifficultyManager {
     this.currentScore = 0;
     this.obstacles.setEnabledTypes([]);
     this.obstacles.setSpawnInterval(OBSTACLE_SPAWN_INTERVAL_BASE);
+    this.obstacles.setMultiLaneChance(0);
   }
 }

@@ -91,7 +91,7 @@ export const MISSION_POOL: MissionDefinition[] = [
     targetValue: 2000,
     coinReward: 50,
     eventKey: 'DISTANCE_CHANGED',
-    progressFn: (d: { distance: number }, _p) => d.distance,
+    progressFn: (d: { totalDistance: number }, _p) => d.totalDistance,
     resetOnDeath: false,
   },
 ];

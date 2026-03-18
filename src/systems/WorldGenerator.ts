@@ -6,10 +6,12 @@ import type { QualityTier } from '../utils/DeviceDetect.ts';
 import { LANE_WIDTH, LANE_COUNT } from '../core/Constants.ts';
 
 const GROUND_LENGTH = 300;
-const TREE_SPACING = 10; // one tree pair every N units
-const TOTAL_TREE_PAIRS = 30; // pool of tree pairs to cycle
+const TREE_SPACING = 10;
+const TOTAL_TREE_PAIRS = 30;
 
-// Simple deterministic hash for consistent tree placement
+// Max tree replacements per frame to avoid lag spikes
+const MAX_REPLACEMENTS_PER_FRAME = 4;
+
 function seedRandom(seed: number): number {
   let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
@@ -19,32 +21,31 @@ export class WorldGenerator {
   private scene: THREE.Scene;
   private totalDistance = 0;
 
-  // Two large ground planes that leapfrog
   private groundA: THREE.Group;
   private groundB: THREE.Group;
 
-  // Tree pool
   private trees: THREE.Group[] = [];
   private treePairsCount: number;
   private lastPlayerSlot = -999;
 
-  // Biome tree factory — can be swapped at runtime
   private treeFactory: () => THREE.Group = createPalmTree;
+
+  // Queue of tree indices that need replacement (spread across frames)
+  private replaceQueue: number[] = [];
 
   constructor(scene: THREE.Scene, quality: QualityTier) {
     this.scene = scene;
     this.treePairsCount = quality === 'high' ? TOTAL_TREE_PAIRS : Math.floor(TOTAL_TREE_PAIRS * 0.6);
 
-    // Create two large ground planes
     this.groundA = this.createGround();
     this.groundB = this.createGround();
     scene.add(this.groundA);
     scene.add(this.groundB);
 
-    // Create tree pool (2 trees per pair = left + right)
     for (let i = 0; i < this.treePairsCount * 2; i++) {
       const tree = this.treeFactory();
       tree.userData['gameObject'] = true;
+      tree.userData['factory'] = this.treeFactory;
       scene.add(tree);
       this.trees.push(tree);
     }
@@ -52,11 +53,17 @@ export class WorldGenerator {
     this.layoutTrees(0);
   }
 
-  /** Swap the tree factory for biome transitions. New trees appear as old ones scroll behind. */
   setTreeFactory(factory: () => THREE.Group): void {
+    if (this.treeFactory === factory) return;
     this.treeFactory = factory;
-    // Force re-layout so new tree slots use the new factory
-    this.lastPlayerSlot = -999;
+
+    // Queue all trees for gradual replacement instead of replacing all at once
+    this.replaceQueue = [];
+    for (let i = 0; i < this.trees.length; i++) {
+      if (this.trees[i]!.userData['factory'] !== factory) {
+        this.replaceQueue.push(i);
+      }
+    }
   }
 
   update(dt: number, speed: number, _playerZ: number): void {
@@ -66,6 +73,15 @@ export class WorldGenerator {
     const baseOffset = Math.floor(this.totalDistance / GROUND_LENGTH) * GROUND_LENGTH;
     this.groundA.position.z = -(baseOffset - this.totalDistance);
     this.groundB.position.z = -(baseOffset + GROUND_LENGTH - this.totalDistance);
+
+    // Process queued tree replacements (spread across frames)
+    if (this.replaceQueue.length > 0) {
+      const count = Math.min(MAX_REPLACEMENTS_PER_FRAME, this.replaceQueue.length);
+      for (let i = 0; i < count; i++) {
+        const idx = this.replaceQueue.shift()!;
+        this.replaceTree(idx);
+      }
+    }
 
     // Trees: only recalculate when player crosses into a new slot
     const playerSlot = Math.floor(this.totalDistance / TREE_SPACING);
@@ -82,7 +98,6 @@ export class WorldGenerator {
 
       const leftTree = this.trees[i * 2]!;
       const rightTree = this.trees[i * 2 + 1]!;
-      // Only update Z — X, Y, rotation, scale stay from layoutTrees
       leftTree.position.z = screenZ + leftTree.userData['zOff'] as number;
       rightTree.position.z = screenZ + rightTree.userData['zOff'] as number;
     }
@@ -91,10 +106,6 @@ export class WorldGenerator {
   private layoutTrees(playerSlot: number): void {
     for (let i = 0; i < this.treePairsCount; i++) {
       const slot = playerSlot - 3 + i;
-
-      // Replace tree meshes at the edges (ahead of player) with current factory
-      this.replaceTreeIfNeeded(i * 2);
-      this.replaceTreeIfNeeded(i * 2 + 1);
 
       // Left tree
       const leftTree = this.trees[i * 2]!;
@@ -120,16 +131,24 @@ export class WorldGenerator {
     }
   }
 
-  /** Replace a tree in the pool if the factory has changed */
-  private replaceTreeIfNeeded(index: number): void {
+  private replaceTree(index: number): void {
     const old = this.trees[index]!;
-    // Tag tracks which factory created this tree
     if (old.userData['factory'] === this.treeFactory) return;
+
+    // Copy position/rotation/scale from old tree so it's seamless
+    const pos = old.position.clone();
+    const rot = old.rotation.clone();
+    const scl = old.scale.clone();
+    const zOff = old.userData['zOff'];
 
     this.scene.remove(old);
     const newTree = this.treeFactory();
     newTree.userData['gameObject'] = true;
     newTree.userData['factory'] = this.treeFactory;
+    newTree.userData['zOff'] = zOff;
+    newTree.position.copy(pos);
+    newTree.rotation.copy(rot);
+    newTree.scale.copy(scl);
     this.scene.add(newTree);
     this.trees[index] = newTree;
   }
@@ -141,14 +160,12 @@ export class WorldGenerator {
 
     const laneWidth = LANE_WIDTH * (LANE_COUNT + 1);
 
-    // Grass
     const grassGeo = new THREE.PlaneGeometry(30, GROUND_LENGTH);
     const grass = new THREE.Mesh(grassGeo, mats.ground);
     grass.rotation.x = -Math.PI / 2;
     grass.receiveShadow = true;
     group.add(grass);
 
-    // Dirt path
     const pathGeo = new THREE.PlaneGeometry(laneWidth, GROUND_LENGTH);
     const path = new THREE.Mesh(pathGeo, mats.path);
     path.rotation.x = -Math.PI / 2;
@@ -166,5 +183,6 @@ export class WorldGenerator {
       this.scene.remove(tree);
     }
     this.trees = [];
+    this.replaceQueue = [];
   }
 }

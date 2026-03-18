@@ -57,13 +57,15 @@ export class MissionManager {
   }
 
   /** Feed cumulative distance for cross-run distance missions */
-  updateDistance(distance: number): void {
-    this.cumulativeDistance = parseInt(localStorage.getItem('sawitHunterTotalDistance') ?? '0', 10) + distance;
+  updateDistance(runDistance: number): void {
+    const totalBase = parseInt(localStorage.getItem('sawitHunterTotalDistance') ?? '0', 10);
+    this.cumulativeDistance = totalBase + runDistance;
 
     // Emit distance periodically (every 10m) to avoid spamming
-    if (Math.floor(this.cumulativeDistance) - this.lastEmittedDistance >= 10) {
-      this.lastEmittedDistance = Math.floor(this.cumulativeDistance);
-      this.processMissionsForEvent('DISTANCE_CHANGED', { distance: this.cumulativeDistance });
+    if (Math.floor(runDistance) - this.lastEmittedDistance >= 10) {
+      this.lastEmittedDistance = Math.floor(runDistance);
+      // Pass both run and cumulative distance so missions can pick the right one
+      this.processMissionsForEvent('DISTANCE_CHANGED', { distance: runDistance, totalDistance: this.cumulativeDistance });
     }
   }
 

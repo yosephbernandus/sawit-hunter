@@ -62,6 +62,7 @@ async function init() {
     quality,
     audio,
     upgradeManager,
+    globalCoins,
     (score, distance) => {
       gameOverScene.setResults(score, distance, currentPlayerName);
       engine.sceneManager.switch('gameOver');
