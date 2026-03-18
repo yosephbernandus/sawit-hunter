@@ -70,6 +70,10 @@ export const SNAKE_COLOR = 0x2d5a1e;
 export const LOG_COLOR = 0x6b4226;
 export const BUCKET_COLOR = 0x888888;
 
+// Biome
+export const BIOME_TRANSITION_DISTANCE = 500;
+export const BIOME_TRANSITION_DURATION = 3; // seconds of color lerp
+
 // Worker character
 export const WORKER_SKIN_COLOR  = 0xc68642;
 export const WORKER_SHIRT_COLOR = 0x4a7fcb;

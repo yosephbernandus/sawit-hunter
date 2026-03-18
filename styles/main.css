@@ -626,6 +626,197 @@ input:focus {
   text-align: center;
 }
 
+/* Shop Button */
+.shop-btn {
+  margin-top: 12px;
+  background: linear-gradient(135deg, var(--bg-medium), var(--accent-green));
+  border-color: var(--accent-green);
+  box-shadow: 0 0 14px var(--glow-green), 0 6px 0 var(--bg-dark);
+  font-size: clamp(12px, 2.5vw, 16px);
+  padding: 12px 30px;
+}
+
+/* Shop Screen */
+.shop-content {
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+}
+
+#shopScreen {
+  background: linear-gradient(135deg, rgba(10, 46, 26, 0.95), rgba(26, 77, 46, 0.95));
+}
+
+.shop-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(20px, 5vw, 32px);
+  color: var(--accent-yellow);
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  margin-bottom: 16px;
+}
+
+.shop-coins {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(12px, 2.5vw, 16px);
+  color: var(--accent-orange);
+  margin-bottom: 20px;
+}
+
+.upgrade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.upgrade-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+.upgrade-info {
+  text-align: left;
+}
+
+.upgrade-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(8px, 1.5vw, 11px);
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+
+.upgrade-desc {
+  font-size: clamp(10px, 1.8vw, 13px);
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+
+.upgrade-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.pip {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-green);
+  background: transparent;
+}
+
+.pip.filled {
+  background: var(--accent-green);
+  box-shadow: 0 0 4px var(--glow-green);
+}
+
+.upgrade-buy-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(9px, 1.5vw, 12px);
+  padding: 8px 14px;
+  border: 2px solid var(--accent-orange);
+  border-radius: 8px;
+  background: rgba(255, 140, 66, 0.2);
+  color: var(--accent-orange);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.upgrade-buy-btn:hover:not(:disabled) {
+  background: rgba(255, 140, 66, 0.4);
+}
+
+.upgrade-buy-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Mission Panel */
+.mission-panel {
+  position: fixed;
+  bottom: 80px;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.mission-panel.hidden {
+  display: none;
+}
+
+.mission-slot {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: clamp(8px, 1.4vw, 11px);
+  backdrop-filter: blur(4px);
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.mission-slot.hidden {
+  display: none;
+}
+
+.mission-text {
+  color: rgba(255, 255, 255, 0.8);
+  flex: 1;
+}
+
+.mission-prog {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(7px, 1.2vw, 9px);
+  color: var(--accent-yellow);
+  white-space: nowrap;
+}
+
+/* Mission Toasts */
+.mission-toasts {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.mission-toast {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(10px, 1.8vw, 13px);
+  color: var(--accent-yellow);
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 10px;
+  padding: 10px 20px;
+  text-align: center;
+  animation: toastSlide 2.5s ease-out forwards;
+}
+
+@keyframes toastSlide {
+  0% { opacity: 0; transform: translateY(20px); }
+  15% { opacity: 1; transform: translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hud {

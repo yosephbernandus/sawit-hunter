@@ -32,3 +32,28 @@ export function setupScene(scene: THREE.Scene, quality: QualityTier): void {
     scene.add(new THREE.AmbientLight(0x99bbdd, 0.9));
   }
 }
+
+const _skyFrom = new THREE.Color();
+const _fogFrom = new THREE.Color();
+const _tmpSky = new THREE.Color();
+const _tmpFog = new THREE.Color();
+
+/** Lerp sky and fog colors. Call with alpha=0 at start, alpha=1 at end. */
+export function lerpEnvironment(
+  scene: THREE.Scene,
+  fromSky: number,
+  fromFog: number,
+  toSky: number,
+  toFog: number,
+  alpha: number,
+): void {
+  _skyFrom.set(fromSky);
+  _tmpSky.set(toSky);
+  (scene.background as THREE.Color).copy(_skyFrom).lerp(_tmpSky, alpha);
+
+  if (scene.fog instanceof THREE.Fog) {
+    _fogFrom.set(fromFog);
+    _tmpFog.set(toFog);
+    scene.fog.color.copy(_fogFrom).lerp(_tmpFog, alpha);
+  }
+}

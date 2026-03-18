@@ -62,6 +62,34 @@ export function getMaterials() {
   return _materials;
 }
 
+// Keys that BiomeManager can lerp
+export type LerpableMaterialKey = 'ground' | 'path' | 'leaf' | 'bark';
+
+const _tmpColor = new THREE.Color();
+
+/** Snapshot current colors for lerp start state */
+export function snapshotColors(keys: LerpableMaterialKey[]): Record<LerpableMaterialKey, THREE.Color> {
+  const mats = getMaterials();
+  const snap = {} as Record<LerpableMaterialKey, THREE.Color>;
+  for (const key of keys) {
+    snap[key] = (mats[key] as THREE.MeshLambertMaterial).color.clone();
+  }
+  return snap;
+}
+
+/** Lerp material colors from snapshot toward targets */
+export function lerpColors(
+  from: Record<LerpableMaterialKey, THREE.Color>,
+  targets: Partial<Record<LerpableMaterialKey, number>>,
+  alpha: number,
+): void {
+  const mats = getMaterials();
+  for (const key of Object.keys(targets) as LerpableMaterialKey[]) {
+    _tmpColor.set(targets[key]!);
+    (mats[key] as THREE.MeshLambertMaterial).color.copy(from[key]).lerp(_tmpColor, alpha);
+  }
+}
+
 export function disposeMaterials(): void {
   if (!_materials) return;
   for (const mat of Object.values(_materials)) {

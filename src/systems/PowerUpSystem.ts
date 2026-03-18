@@ -26,6 +26,8 @@ export class PowerUpSystem {
 
   private active: ActivePowerUp | null = null;
   private shieldMesh: THREE.Mesh | null = null;
+  private shieldDur = SHIELD_DURATION;
+  private magnetRng = MAGNET_RANGE;
 
   constructor(
     eventBus: EventBus,
@@ -52,6 +54,9 @@ export class PowerUpSystem {
     });
   }
 
+  setShieldDuration(d: number): void { this.shieldDur = d; }
+  setMagnetRange(r: number): void { this.magnetRng = r; }
+
   update(dt: number): void {
     if (!this.active) return;
 
@@ -75,8 +80,8 @@ export class PowerUpSystem {
         const dx = px - c.mesh.position.x;
         const dz = pz - c.mesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < MAGNET_RANGE && dist > 0.2) {
-          const strength = MAGNET_PULL_SPEED * dt * (1 - dist / MAGNET_RANGE);
+        if (dist < this.magnetRng && dist > 0.2) {
+          const strength = MAGNET_PULL_SPEED * dt * (1 - dist / this.magnetRng);
           c.mesh.position.x += (dx / dist) * strength;
           c.mesh.position.z += (dz / dist) * strength;
         }
@@ -98,7 +103,7 @@ export class PowerUpSystem {
     let duration: number;
     switch (type) {
       case 'shield':
-        duration = SHIELD_DURATION;
+        duration = this.shieldDur;
         this.collision.setShielded(true);
         this.showShieldVisual();
         break;

@@ -5,7 +5,11 @@ import { initMaterials } from './rendering/MaterialLibrary.ts';
 import { MenuScene } from './scenes/MenuScene.ts';
 import { GameScene } from './scenes/GameScene.ts';
 import { GameOverScene } from './scenes/GameOverScene.ts';
+import { ShopScene } from './scenes/ShopScene.ts';
 import { AudioManager } from './audio/AudioManager.ts';
+import { CoinManager } from './systems/CoinManager.ts';
+import { UpgradeManager } from './systems/UpgradeManager.ts';
+import { EventBus } from './core/EventBus.ts';
 import { Howler } from 'howler';
 
 // iOS requires AudioContext to be resumed inside a user gesture
@@ -44,6 +48,11 @@ async function init() {
 
   setProgress(60, 'Preparing scenes...');
 
+  // Global coin/upgrade managers (persist across scenes via localStorage)
+  const globalEventBus = new EventBus();
+  const globalCoins = new CoinManager(globalEventBus);
+  const upgradeManager = new UpgradeManager(globalCoins);
+
   const menuScene = new MenuScene(engine.camera, engine.threeScene, audio);
   const gameOverScene = new GameOverScene(audio);
   let currentPlayerName = 'Player';
@@ -52,15 +61,21 @@ async function init() {
     engine.camera,
     quality,
     audio,
+    upgradeManager,
     (score, distance) => {
       gameOverScene.setResults(score, distance, currentPlayerName);
       engine.sceneManager.switch('gameOver');
     },
   );
 
+  const shopScene = new ShopScene(upgradeManager, globalCoins, audio, () => {
+    engine.sceneManager.switch('menu');
+  });
+
   engine.sceneManager.register('menu', menuScene);
   engine.sceneManager.register('game', gameScene);
   engine.sceneManager.register('gameOver', gameOverScene);
+  engine.sceneManager.register('shop', shopScene);
 
   setProgress(80, 'Almost ready...');
 
@@ -70,6 +85,10 @@ async function init() {
     currentPlayerName = nameInput.value.trim() || 'Player';
     gameScene.setPlayerName(currentPlayerName);
     engine.sceneManager.switch('game');
+  });
+
+  document.getElementById('shopBtn')?.addEventListener('click', () => {
+    engine.sceneManager.switch('shop');
   });
 
   document.getElementById('restartBtn')!.addEventListener('click', () => {

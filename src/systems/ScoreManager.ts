@@ -41,6 +41,13 @@ export class ScoreManager {
     }
   }
 
+  setStartingScore(s: number): void {
+    this.score = s;
+    if (s > 0) {
+      this.eventBus.emit('SCORE_CHANGED', { score: this.score, highScore: this.highScore });
+    }
+  }
+
   getScore(): number {
     return this.score;
   }

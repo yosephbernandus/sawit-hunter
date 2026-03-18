@@ -28,6 +28,9 @@ export class WorldGenerator {
   private treePairsCount: number;
   private lastPlayerSlot = -999;
 
+  // Biome tree factory — can be swapped at runtime
+  private treeFactory: () => THREE.Group = createPalmTree;
+
   constructor(scene: THREE.Scene, quality: QualityTier) {
     this.scene = scene;
     this.treePairsCount = quality === 'high' ? TOTAL_TREE_PAIRS : Math.floor(TOTAL_TREE_PAIRS * 0.6);
@@ -39,15 +42,21 @@ export class WorldGenerator {
     scene.add(this.groundB);
 
     // Create tree pool (2 trees per pair = left + right)
-    const treesPerSide = quality === 'high' ? TREES_PER_CHUNK_HIGH : TREES_PER_CHUNK_LOW;
     for (let i = 0; i < this.treePairsCount * 2; i++) {
-      const tree = createPalmTree();
+      const tree = this.treeFactory();
       tree.userData['gameObject'] = true;
       scene.add(tree);
       this.trees.push(tree);
     }
 
     this.layoutTrees(0);
+  }
+
+  /** Swap the tree factory for biome transitions. New trees appear as old ones scroll behind. */
+  setTreeFactory(factory: () => THREE.Group): void {
+    this.treeFactory = factory;
+    // Force re-layout so new tree slots use the new factory
+    this.lastPlayerSlot = -999;
   }
 
   update(dt: number, speed: number, _playerZ: number): void {
@@ -83,6 +92,10 @@ export class WorldGenerator {
     for (let i = 0; i < this.treePairsCount; i++) {
       const slot = playerSlot - 3 + i;
 
+      // Replace tree meshes at the edges (ahead of player) with current factory
+      this.replaceTreeIfNeeded(i * 2);
+      this.replaceTreeIfNeeded(i * 2 + 1);
+
       // Left tree
       const leftTree = this.trees[i * 2]!;
       const sr1 = seedRandom(slot * 2);
@@ -105,6 +118,20 @@ export class WorldGenerator {
       rightTree.rotation.y = sr6 * Math.PI * 2;
       rightTree.scale.setScalar(0.75 + sr4 * 0.35);
     }
+  }
+
+  /** Replace a tree in the pool if the factory has changed */
+  private replaceTreeIfNeeded(index: number): void {
+    const old = this.trees[index]!;
+    // Tag tracks which factory created this tree
+    if (old.userData['factory'] === this.treeFactory) return;
+
+    this.scene.remove(old);
+    const newTree = this.treeFactory();
+    newTree.userData['gameObject'] = true;
+    newTree.userData['factory'] = this.treeFactory;
+    this.scene.add(newTree);
+    this.trees[index] = newTree;
   }
 
   private createGround(): THREE.Group {

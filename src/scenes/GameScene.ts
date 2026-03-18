@@ -15,7 +15,11 @@ import { EventBus } from '../core/EventBus.ts';
 import type { AudioManager } from '../audio/AudioManager.ts';
 import { createWorker } from '../rendering/ModelFactory.ts';
 import { WorkerAnimator } from '../systems/WorkerAnimator.ts';
-import { BASE_SPEED } from '../core/Constants.ts';
+import { BiomeManager } from '../systems/BiomeManager.ts';
+import { MissionManager } from '../systems/MissionManager.ts';
+import { CoinManager } from '../systems/CoinManager.ts';
+import type { UpgradeManager } from '../systems/UpgradeManager.ts';
+import { SHIELD_DURATION, MAGNET_RANGE } from '../core/Constants.ts';
 import { isMobile } from '../utils/DeviceDetect.ts';
 import type { QualityTier } from '../utils/DeviceDetect.ts';
 
@@ -38,6 +42,9 @@ export class GameScene implements IGameScene {
   private particles!: ParticleSystem;
   private powerUps!: PowerUpSystem;
   private eventBus!: EventBus;
+  private biome!: BiomeManager;
+  private missions!: MissionManager;
+  private coins!: CoinManager;
 
   // State
   private distance = 0;
@@ -45,6 +52,8 @@ export class GameScene implements IGameScene {
   private playerName = 'Player';
   private gameOver = false;
   private paused = false;
+  private extraLives = 0;
+  private invincibleTimer = 0;
   private pauseKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   private resumeHandler: (() => void) | null = null;
 
@@ -55,18 +64,21 @@ export class GameScene implements IGameScene {
 
   private workerAnimator: WorkerAnimator | null = null;
   private onGameOver: (score: number, distance: number) => void;
+  private upgradeManager: UpgradeManager;
 
   constructor(
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
     quality: QualityTier,
     audio: AudioManager,
+    upgradeManager: UpgradeManager,
     onGameOver: (score: number, distance: number) => void,
   ) {
     this.scene = scene;
     this.camera = camera;
     this.quality = quality;
     this.audio = audio;
+    this.upgradeManager = upgradeManager;
     this.onGameOver = onGameOver;
   }
 
@@ -113,6 +125,19 @@ export class GameScene implements IGameScene {
     this.powerUps = new PowerUpSystem(
       this.eventBus, this.player, this.collision, this.collectibles, this.scene,
     );
+    this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
+
+    // Missions & coins
+    this.coins = new CoinManager(this.eventBus);
+    this.coins.setMultiplier(1 + this.upgradeManager.getEffectValue('coinMultiplier'));
+    this.missions = new MissionManager(this.eventBus, this.coins);
+
+    // Apply upgrades
+    this.powerUps.setShieldDuration(SHIELD_DURATION + this.upgradeManager.getEffectValue('shieldDuration'));
+    this.powerUps.setMagnetRange(MAGNET_RANGE * (1 + this.upgradeManager.getEffectValue('magnetRange')));
+    this.scoreManager.setStartingScore(this.upgradeManager.getEffectValue('startingScore'));
+    this.extraLives = this.upgradeManager.getEffectValue('extraLife');
+    this.invincibleTimer = 0;
 
     // --- Event wiring ---
 
@@ -138,7 +163,19 @@ export class GameScene implements IGameScene {
 
     this.eventBus.on('OBSTACLE_HIT', () => {
       if (this.gameOver) return;
+
+      // Extra life: survive one hit
+      if (this.extraLives > 0 && this.invincibleTimer <= 0) {
+        this.extraLives--;
+        this.invincibleTimer = 2; // 2s invincibility
+        this.cameraCtrl.shake(0.4, 0.2);
+        this.audio.play('powerup');
+        return;
+      }
+
       this.gameOver = true;
+      this.missions.onRunEnd();
+      this.missions.saveTotalDistance(this.distance);
       this.workerAnimator?.startDeath();
       this.audio.stopAllSfx();
       this.audio.stopMusic();
@@ -146,7 +183,15 @@ export class GameScene implements IGameScene {
       this.cameraCtrl.shake(0.8, 0.5);
       setTimeout(() => {
         this.onGameOver(this.scoreManager.getScore(), this.distance);
-      }, 1200); // extra time for death animation to play out
+      }, 1200);
+    });
+
+    this.eventBus.on('MISSION_COMPLETED', ({ missionId, coinReward }) => {
+      this.showMissionToast(coinReward);
+    });
+
+    this.eventBus.on('MISSION_PROGRESS', () => {
+      this.updateMissionPanel();
     });
 
     // UI — cache DOM refs
@@ -157,6 +202,9 @@ export class GameScene implements IGameScene {
     this.hudDistance = document.getElementById('hudDistance')!;
     this.hudScore.textContent = '0';
     this.hudHighScore.textContent = String(this.scoreManager.getHighScore());
+
+    document.getElementById('missionPanel')?.classList.remove('hidden');
+    this.updateMissionPanel();
 
     if (isMobile()) {
       document.getElementById('mobileControls')?.classList.remove('hidden');
@@ -214,8 +262,19 @@ export class GameScene implements IGameScene {
     this.powerUps.update(dt);
     this.collision.update();
     this.distance += speed * dt;
+    this.biome.update(dt, this.distance);
+    this.missions.updateDistance(this.distance);
     this.particles.update(dt, speed, this.playerMesh.position.x, this.playerMesh.position.z);
     this.cameraCtrl.update(dt);
+
+    // Invincibility countdown
+    if (this.invincibleTimer > 0) {
+      this.invincibleTimer -= dt;
+      // Flash player mesh to indicate invincibility
+      this.playerMesh.visible = Math.floor(this.invincibleTimer * 10) % 2 === 0;
+    } else {
+      this.playerMesh.visible = true;
+    }
 
     // Update distance display
     this.hudDistance.textContent = `${Math.floor(this.distance)}m`;
@@ -237,10 +296,36 @@ export class GameScene implements IGameScene {
     el.addEventListener('animationend', () => el.remove());
   }
 
+  private showMissionToast(coinReward: number): void {
+    const container = document.getElementById('missionToasts');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'mission-toast';
+    el.textContent = `Mission Complete! +${coinReward} coins`;
+    container.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  private updateMissionPanel(): void {
+    const missions = this.missions.getActive();
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById(`mission${i}`);
+      if (!slot) continue;
+      const m = missions[i];
+      if (m) {
+        slot.classList.remove('hidden');
+        slot.innerHTML = `<span class="mission-text">${m.description}</span><span class="mission-prog">${Math.floor(m.progress)}/${m.target}</span>`;
+      } else {
+        slot.classList.add('hidden');
+      }
+    }
+  }
+
   exit(): void {
     document.getElementById('hud')?.classList.add('hidden');
     document.getElementById('mobileControls')?.classList.add('hidden');
     document.getElementById('powerupIndicator')?.classList.add('hidden');
+    document.getElementById('missionPanel')?.classList.add('hidden');
     this.input?.dispose();
     this.world?.dispose();
     this.collectibles?.dispose();

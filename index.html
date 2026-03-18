@@ -41,7 +41,7 @@
           src="/assets/textures/sawit-tree.webp"
           alt="palm tree"
         />
-        <h1>SAWIT<br />RUNNER</h1>
+        <h1>SAWIT<br />HUNTER</h1>
         <img
           class="title-img"
           src="/assets/textures/sawit-tree.webp"
@@ -64,7 +64,7 @@
           src="/assets/textures/sawit-tree.webp"
           alt="palm tree"
         />
-        <h1>SAWIT<br />RUNNER</h1>
+        <h1>SAWIT<br />HUNTER</h1>
         <img
           class="title-img"
           src="/assets/textures/sawit-tree.webp"
@@ -81,6 +81,9 @@
       </div>
       <button id="playBtn" class="game-btn">
         <span class="btn-text">START</span>
+      </button>
+      <button id="shopBtn" class="game-btn shop-btn">
+        <span class="btn-text">SHOP</span>
       </button>
       <div class="high-score-display" id="highScoreDisplay"></div>
       <div class="controls-hint" id="controlsHint">
@@ -116,6 +119,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Mission panel (inside game HUD area) -->
+    <div id="missionPanel" class="mission-panel hidden">
+      <div class="mission-slot" id="mission0"></div>
+      <div class="mission-slot" id="mission1"></div>
+      <div class="mission-slot" id="mission2"></div>
+    </div>
+
+    <!-- Mission toasts -->
+    <div id="missionToasts" class="mission-toasts"></div>
 
     <!-- Score popup container -->
     <div id="scorePopups" class="score-popups"></div>
@@ -194,6 +207,18 @@
             <span class="link-text">Support Aceh via Kitabisa</span>
           </a>
         </div>
+      </div>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shopScreen" class="overlay hidden">
+      <div class="shop-content">
+        <h2 class="shop-title">UPGRADE SHOP</h2>
+        <div id="shopCoins" class="shop-coins">Coins: 0</div>
+        <div id="upgradeList" class="upgrade-list"></div>
+        <button id="shopBackBtn" class="game-btn">
+          <span class="btn-text">BACK</span>
+        </button>
       </div>
     </div>
 

@@ -10,6 +10,11 @@ export type GameEvents = {
   DISTANCE_CHANGED: { distance: number };
   POWERUP_ACTIVATED: { type: string; duration: number };
   POWERUP_EXPIRED: { type: string };
+  BIOME_ENTERED: { biome: string; index: number };
+  PLAYER_JUMPED: Record<string, never>;
+  MISSION_COMPLETED: { missionId: string; coinReward: number };
+  MISSION_PROGRESS: { missionId: string; progress: number; target: number };
+  COINS_CHANGED: { balance: number };
 };
 
 type EventHandler<T> = (data: T) => void;
