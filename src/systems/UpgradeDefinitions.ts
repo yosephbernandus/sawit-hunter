@@ -4,54 +4,48 @@ export interface UpgradeDefinition {
   description: string;
   maxLevel: number;
   baseCost: number;
-  costMultiplier: number;
   effectPerLevel: number;
 }
 
 export const UPGRADES: UpgradeDefinition[] = [
   {
     id: 'shieldDuration',
-    name: 'Shield Duration',
-    description: '+1s shield per level',
+    name: 'Shield Boost',
+    description: '+1s shield (next run)',
     maxLevel: 5,
-    baseCost: 100,
-    costMultiplier: 1.5,
+    baseCost: 50,
     effectPerLevel: 1,
   },
   {
     id: 'magnetRange',
-    name: 'Magnet Range',
-    description: '+20% magnet range per level',
+    name: 'Magnet Boost',
+    description: '+20% magnet range (next run)',
     maxLevel: 5,
-    baseCost: 100,
-    costMultiplier: 1.5,
+    baseCost: 50,
     effectPerLevel: 0.2,
   },
   {
     id: 'startingScore',
-    name: 'Starting Score',
-    description: '+50 starting score per level',
+    name: 'Head Start',
+    description: '+50 starting score (next run)',
     maxLevel: 3,
-    baseCost: 150,
-    costMultiplier: 1.8,
+    baseCost: 80,
     effectPerLevel: 50,
   },
   {
     id: 'coinMultiplier',
-    name: 'Coin Multiplier',
-    description: '+10% coins per level',
+    name: 'Coin Boost',
+    description: '+10% coins (next run)',
     maxLevel: 5,
-    baseCost: 200,
-    costMultiplier: 1.6,
+    baseCost: 100,
     effectPerLevel: 0.1,
   },
   {
     id: 'extraLife',
     name: 'Extra Life',
-    description: '+1 extra life per level',
+    description: '+1 life (next run)',
     maxLevel: 3,
-    baseCost: 300,
-    costMultiplier: 2.0,
+    baseCost: 150,
     effectPerLevel: 1,
   },
 ];

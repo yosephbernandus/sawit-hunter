@@ -136,12 +136,13 @@ export class GameScene implements IGameScene {
     this.coins.setMultiplier(1 + this.upgradeManager.getEffectValue('coinMultiplier'));
     this.missions = new MissionManager(this.eventBus, this.coins);
 
-    // Apply upgrades
+    // Apply upgrades then consume (single-use per run)
     this.powerUps.setShieldDuration(SHIELD_DURATION + this.upgradeManager.getEffectValue('shieldDuration'));
     this.powerUps.setMagnetRange(MAGNET_RANGE * (1 + this.upgradeManager.getEffectValue('magnetRange')));
     this.scoreManager.setStartingScore(this.upgradeManager.getEffectValue('startingScore'));
     this.extraLives = this.upgradeManager.getEffectValue('extraLife');
     this.invincibleTimer = 0;
+    this.upgradeManager.consumeAll();
 
     // --- Event wiring ---
 

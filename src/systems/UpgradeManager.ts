@@ -27,8 +27,8 @@ export class UpgradeManager {
   getCost(upgradeId: string): number {
     const def = UPGRADES.find((u) => u.id === upgradeId);
     if (!def) return Infinity;
-    const level = this.getLevel(upgradeId);
-    return Math.floor(def.baseCost * Math.pow(def.costMultiplier, level));
+    // Flat cost per level — no scaling since they're single-use
+    return def.baseCost;
   }
 
   canPurchase(upgradeId: string): boolean {
@@ -46,6 +46,12 @@ export class UpgradeManager {
     this.levels[upgradeId] = (this.levels[upgradeId] ?? 0) + 1;
     this.save();
     return true;
+  }
+
+  /** Consume all purchased upgrades (called when a game run starts). Resets levels to 0. */
+  consumeAll(): void {
+    this.levels = {};
+    this.save();
   }
 
   getUpgrades(): (UpgradeDefinition & { level: number; cost: number; maxed: boolean })[] {
