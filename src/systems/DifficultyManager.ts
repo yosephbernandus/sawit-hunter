@@ -16,6 +16,11 @@ const MULTI_LANE_START_SCORE = 300;
 const MULTI_LANE_MAX_SCORE = 1000;
 const MULTI_LANE_MAX_CHANCE = 0.5; // 50% of spawns are patterns at peak
 
+// Triple patterns (all 3 lanes) ramp in later
+const TRIPLE_START_SCORE = 800;
+const TRIPLE_MAX_SCORE = 1800;
+const TRIPLE_MAX_CHANCE = 0.45; // 45% of multi-lane spawns become triple at peak
+
 export class DifficultyManager {
   private currentSpeed = BASE_SPEED;
   private obstacles: ObstacleManager;
@@ -63,6 +68,17 @@ export class DifficultyManager {
     } else {
       this.obstacles.setMultiLaneChance(0);
     }
+
+    // Triple pattern chance ramps up later
+    if (this.currentScore >= TRIPLE_START_SCORE) {
+      const progress = Math.min(
+        (this.currentScore - TRIPLE_START_SCORE) / (TRIPLE_MAX_SCORE - TRIPLE_START_SCORE),
+        1,
+      );
+      this.obstacles.setTripleChance(progress * TRIPLE_MAX_CHANCE);
+    } else {
+      this.obstacles.setTripleChance(0);
+    }
   }
 
   getSpeed(): number {
@@ -75,5 +91,6 @@ export class DifficultyManager {
     this.obstacles.setEnabledTypes([]);
     this.obstacles.setSpawnInterval(OBSTACLE_SPAWN_INTERVAL_BASE);
     this.obstacles.setMultiLaneChance(0);
+    this.obstacles.setTripleChance(0);
   }
 }

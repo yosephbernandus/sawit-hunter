@@ -26,6 +26,7 @@ export class ObstacleManager {
   private spawnAheadZ = -70;
   private enabledTypes: ObstacleType[] = [];
   private multiLaneChance = 0; // 0–1, set by DifficultyManager
+  private tripleChance = 0; // 0–1, chance that a multi-lane pattern uses 3 obstacles
 
   private snakePool = new ObjectPool<THREE.Mesh>(
     () => createSnake(),
@@ -40,7 +41,7 @@ export class ObstacleManager {
   private branchPool = new ObjectPool<THREE.Group>(
     () => createBranch(),
     (m) => { m.visible = true; },
-    4,
+    6,
   );
 
   constructor(scene: THREE.Scene) {
@@ -58,6 +59,11 @@ export class ObstacleManager {
   /** Set chance (0–1) of spawning multi-lane patterns */
   setMultiLaneChance(chance: number): void {
     this.multiLaneChance = chance;
+  }
+
+  /** Set chance (0–1) that a multi-lane spawn becomes a triple pattern */
+  setTripleChance(chance: number): void {
+    this.tripleChance = chance;
   }
 
   update(dt: number, speed: number, playerZ: number): void {
@@ -88,7 +94,8 @@ export class ObstacleManager {
   private spawnPattern(playerZ: number): void {
     // Decide: single obstacle or multi-lane pattern
     if (Math.random() < this.multiLaneChance && this.enabledTypes.length > 0) {
-      const pattern = this.generatePattern();
+      const useTriple = Math.random() < this.tripleChance;
+      const pattern = useTriple ? this.generateTriplePattern() : this.generatePattern();
       for (const entry of pattern) {
         this.spawnOne(entry.lane, entry.type, playerZ);
       }
@@ -162,6 +169,57 @@ export class ObstacleManager {
       // Fallback: single obstacle
       return [{ lane: randomInt(0, 2), type: randomChoice(this.enabledTypes) }];
     }
+
+    return randomChoice(patterns)();
+  }
+
+  /**
+   * Generate a triple pattern (all 3 lanes occupied).
+   * Always leaves at least one lane where the player can jump or duck to survive.
+   * - Ground obstacles (snake/log) → player can jump over
+   * - Branches → player can duck under
+   * So mixing ground + branch in all 3 lanes is fair: pick a ground lane and jump, or a branch lane and duck.
+   */
+  private generateTriplePattern(): SpawnEntry[] {
+    const groundTypes = this.enabledTypes.filter((t) => t === 'snake' || t === 'log');
+    const hasBranch = this.enabledTypes.includes('branch');
+
+    // Need both ground and branch types for fair triple patterns
+    if (groundTypes.length === 0 || !hasBranch) {
+      // Fallback to double pattern if we can't make a fair triple
+      return this.generatePattern();
+    }
+
+    const patterns: (() => SpawnEntry[])[] = [];
+
+    // Pattern: 2 ground + 1 branch (duck under branch lane, or jump in a ground lane)
+    patterns.push(() => {
+      const branchLane = randomInt(0, 2);
+      const gt = randomChoice(groundTypes);
+      return [0, 1, 2].map((l) => ({
+        lane: l,
+        type: l === branchLane ? 'branch' as ObstacleType : gt,
+      }));
+    });
+
+    // Pattern: 1 ground + 2 branches (jump in ground lane, or duck in a branch lane)
+    patterns.push(() => {
+      const groundLane = randomInt(0, 2);
+      const gt = randomChoice(groundTypes);
+      return [0, 1, 2].map((l) => ({
+        lane: l,
+        type: l === groundLane ? gt : 'branch' as ObstacleType,
+      }));
+    });
+
+    // Pattern: alternating — ground, branch, ground
+    patterns.push(() => {
+      const gt = randomChoice(groundTypes);
+      const order = Math.random() < 0.5
+        ? [gt, 'branch' as ObstacleType, gt]
+        : ['branch' as ObstacleType, gt, 'branch' as ObstacleType];
+      return [0, 1, 2].map((l) => ({ lane: l, type: order[l]! }));
+    });
 
     return randomChoice(patterns)();
   }
