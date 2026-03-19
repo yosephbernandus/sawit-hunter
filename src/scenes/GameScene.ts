@@ -19,7 +19,8 @@ import { BiomeManager } from '../systems/BiomeManager.ts';
 import { MissionManager } from '../systems/MissionManager.ts';
 import type { CoinManager } from '../systems/CoinManager.ts';
 import type { UpgradeManager } from '../systems/UpgradeManager.ts';
-import { SHIELD_DURATION, MAGNET_RANGE } from '../core/Constants.ts';
+import { SHIELD_DURATION, MAGNET_RANGE, SKY_COLOR, FOG_COLOR } from '../core/Constants.ts';
+import { resetBiomeColors } from '../rendering/MaterialLibrary.ts';
 import { isMobile } from '../utils/DeviceDetect.ts';
 import type { QualityTier } from '../utils/DeviceDetect.ts';
 
@@ -97,7 +98,14 @@ export class GameScene implements IGameScene {
     });
     toRemove.forEach((obj) => this.scene.remove(obj));
 
-    // Fresh state
+    // Fresh state — reset biome colors to Plantation
+    resetBiomeColors();
+    const bg = this.scene.background as any;
+    if (bg?.isColor) bg.set(SKY_COLOR);
+    if (this.scene.fog && 'color' in this.scene.fog) {
+      (this.scene.fog as any).color.set(FOG_COLOR);
+    }
+
     this.distance = 0;
     this.gameOver = false;
     this.eventBus = new EventBus();
@@ -159,6 +167,10 @@ export class GameScene implements IGameScene {
     this.eventBus.on('SCORE_CHANGED', ({ score, highScore }) => {
       this.hudScore.textContent = String(score);
       this.hudHighScore.textContent = String(highScore);
+    });
+
+    this.eventBus.on('BIOME_ENTERED', ({ biome }) => {
+      this.showBiomeToast(biome);
     });
 
     this.eventBus.on('SPEED_MILESTONE', () => {
@@ -298,6 +310,16 @@ export class GameScene implements IGameScene {
     el.style.left = `${45 + Math.random() * 10}%`;
     el.style.top = `${35 + Math.random() * 10}%`;
 
+    container.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  private showBiomeToast(biome: string): void {
+    const container = document.getElementById('missionToasts');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'mission-toast biome-toast';
+    el.textContent = biome;
     container.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
   }

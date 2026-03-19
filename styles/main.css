@@ -838,3 +838,20 @@ input:focus {
     display: none !important;
   }
 }
+
+/* Biome toast — bigger, cyan accent */
+.biome-toast {
+  font-size: clamp(14px, 2.5vw, 18px);
+  color: #7fdbff;
+  border-color: #7fdbff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Game over button row */
+.game-over-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}

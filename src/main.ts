@@ -66,11 +66,13 @@ async function init() {
     (score, distance) => {
       gameOverScene.setResults(score, distance, currentPlayerName);
       engine.sceneManager.switch('gameOver');
+      updateCoinDisplays();
     },
   );
 
   const shopScene = new ShopScene(upgradeManager, globalCoins, audio, () => {
     engine.sceneManager.switch('menu');
+    updateCoinDisplays();
   });
 
   engine.sceneManager.register('menu', menuScene);
@@ -92,9 +94,26 @@ async function init() {
     engine.sceneManager.switch('shop');
   });
 
+  document.getElementById('gameOverShopBtn')?.addEventListener('click', () => {
+    engine.sceneManager.switch('shop');
+  });
+
   document.getElementById('restartBtn')!.addEventListener('click', () => {
     engine.sceneManager.switch('menu');
+    updateCoinDisplays();
   });
+
+  // Update coin displays when balance changes
+  const updateCoinDisplays = () => {
+    const bal = globalCoins.getBalance();
+    const text = bal > 0 ? `Coins: ${bal}` : '';
+    const menuEl = document.getElementById('menuCoinDisplay');
+    const goEl = document.getElementById('gameOverCoinDisplay');
+    if (menuEl) menuEl.textContent = text;
+    if (goEl) goEl.textContent = text;
+  };
+  globalEventBus.on('COINS_CHANGED', updateCoinDisplays);
+  updateCoinDisplays(); // show initial balance
 
   document.getElementById('usernameInput')!.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {

@@ -90,6 +90,15 @@ export function lerpColors(
   }
 }
 
+/** Reset biome-affected material colors to Plantation defaults */
+export function resetBiomeColors(): void {
+  const mats = getMaterials();
+  (mats.ground as THREE.MeshLambertMaterial).color.set(C.GROUND_COLOR);
+  (mats.path as THREE.MeshLambertMaterial).color.set(0x8b7355);
+  (mats.leaf as THREE.MeshLambertMaterial).color.set(C.LEAF_COLOR);
+  (mats.bark as THREE.MeshLambertMaterial).color.set(C.BARK_COLOR);
+}
+
 export function disposeMaterials(): void {
   if (!_materials) return;
   for (const mat of Object.values(_materials)) {

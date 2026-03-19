@@ -86,6 +86,7 @@
         <span class="btn-text">SHOP</span>
       </button>
       <div class="high-score-display" id="highScoreDisplay"></div>
+      <div class="coin-display" id="menuCoinDisplay"></div>
       <div class="controls-hint" id="controlsHint">
         <span class="hint-keys">A/D</span> Move &nbsp;&middot;&nbsp;
         <span class="hint-keys">W/&#9650;</span> Jump &nbsp;&middot;&nbsp;
@@ -172,9 +173,15 @@
           <div class="final-score-label">Final Score</div>
           <div class="final-score-value" id="finalScore">0</div>
         </div>
-        <button id="restartBtn" class="game-btn restart-btn">
-          <span class="btn-text">PLAY AGAIN</span>
-        </button>
+        <div class="coin-display" id="gameOverCoinDisplay"></div>
+        <div class="game-over-btns">
+          <button id="restartBtn" class="game-btn restart-btn">
+            <span class="btn-text">PLAY AGAIN</span>
+          </button>
+          <button id="gameOverShopBtn" class="game-btn shop-btn">
+            <span class="btn-text">SHOP</span>
+          </button>
+        </div>
         <div class="leaderboard">
           <h3 class="lb-title">LEADERBOARD</h3>
           <div id="leaderboardStatus" class="lb-status">Loading...</div>
