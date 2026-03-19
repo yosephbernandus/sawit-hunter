@@ -3,11 +3,22 @@ import type { EventBus } from '../core/EventBus.ts';
 import type { PlayerController } from './PlayerController.ts';
 import type { CollisionSystem } from './CollisionSystem.ts';
 import type { CollectibleManager } from './CollectibleManager.ts';
-import { SHIELD_DURATION, MAGNET_DURATION, BIG_BUCKET_DURATION, MAGNET_RANGE } from '../core/Constants.ts';
+import type { ScoreManager } from './ScoreManager.ts';
+import type { DifficultyManager } from './DifficultyManager.ts';
+import {
+  SHIELD_DURATION,
+  MAGNET_DURATION,
+  BIG_BUCKET_DURATION,
+  MAGNET_RANGE,
+  DOUBLE_SCORE_DURATION,
+  DOUBLE_SCORE_MULTIPLIER,
+  SLOW_MO_DURATION,
+  SLOW_MO_FACTOR,
+} from '../core/Constants.ts';
 import { getMaterials } from '../rendering/MaterialLibrary.ts';
 import { getGeos } from '../rendering/ModelFactory.ts';
 
-export type PowerUpType = 'shield' | 'magnet' | 'bigBucket';
+export type PowerUpType = 'shield' | 'magnet' | 'bigBucket' | 'doubleScore' | 'slowMo';
 
 interface ActivePowerUp {
   type: PowerUpType;
@@ -22,6 +33,8 @@ export class PowerUpSystem {
   private player: PlayerController;
   private collision: CollisionSystem;
   private collectibles: CollectibleManager;
+  private scoreManager: ScoreManager;
+  private difficulty: DifficultyManager;
   private scene: THREE.Scene;
 
   private active: ActivePowerUp | null = null;
@@ -35,12 +48,16 @@ export class PowerUpSystem {
     collision: CollisionSystem,
     collectibles: CollectibleManager,
     scene: THREE.Scene,
+    scoreManager: ScoreManager,
+    difficulty: DifficultyManager,
   ) {
     this.eventBus = eventBus;
     this.player = player;
     this.collision = collision;
     this.collectibles = collectibles;
     this.scene = scene;
+    this.scoreManager = scoreManager;
+    this.difficulty = difficulty;
 
     this.eventBus.on('POWERUP_COLLECTED', ({ type }) => {
       this.activate(type as PowerUpType);
@@ -116,6 +133,15 @@ export class PowerUpSystem {
         this.player.mesh.scale.z = 1.5;
         this.collision.setCollectXMultiplier(BIG_BUCKET_MULTIPLIER);
         break;
+      case 'doubleScore':
+        duration = DOUBLE_SCORE_DURATION;
+        this.scoreManager.setScoreMultiplier(DOUBLE_SCORE_MULTIPLIER);
+        break;
+      case 'slowMo':
+        duration = SLOW_MO_DURATION;
+        this.difficulty.setSpeedMultiplier(SLOW_MO_FACTOR);
+        document.getElementById('gameCanvas')?.classList.add('slow-mo');
+        break;
     }
 
     this.active = { type, timer: duration };
@@ -129,6 +155,8 @@ export class PowerUpSystem {
         case 'shield': icon.textContent = 'SHIELD'; break;
         case 'magnet': icon.textContent = 'MAGNET'; break;
         case 'bigBucket': icon.textContent = 'BIG BUCKET'; break;
+        case 'doubleScore': icon.textContent = '2X SCORE'; break;
+        case 'slowMo': icon.textContent = 'SLOW MO'; break;
       }
     }
 
@@ -147,6 +175,13 @@ export class PowerUpSystem {
         this.player.mesh.scale.x = 1;
         this.player.mesh.scale.z = 1;
         this.collision.setCollectXMultiplier(1);
+        break;
+      case 'doubleScore':
+        this.scoreManager.setScoreMultiplier(1);
+        break;
+      case 'slowMo':
+        this.difficulty.setSpeedMultiplier(1);
+        document.getElementById('gameCanvas')?.classList.remove('slow-mo');
         break;
     }
 

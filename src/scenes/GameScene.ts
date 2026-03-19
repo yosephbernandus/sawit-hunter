@@ -135,6 +135,7 @@ export class GameScene implements IGameScene {
     this.particles = new ParticleSystem(this.scene);
     this.powerUps = new PowerUpSystem(
       this.eventBus, this.player, this.collision, this.collectibles, this.scene,
+      this.scoreManager, this.difficulty,
     );
     this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
 
@@ -158,6 +159,11 @@ export class GameScene implements IGameScene {
       this.particles.burst(position.x, position.y, position.z, 15, points > 10);
       this.audio.play('catch');
       this.showScorePopup(points);
+    });
+
+    this.eventBus.on('NEAR_MISS', ({ points }) => {
+      this.cameraCtrl.shake(0.15, 0.1);
+      this.showScorePopup(points, 'CLOSE!');
     });
 
     this.eventBus.on('POWERUP_COLLECTED', () => {
@@ -278,7 +284,7 @@ export class GameScene implements IGameScene {
     this.collectibles.update(dt, speed, this.playerMesh.position.z);
     this.obstacles.update(dt, speed, this.playerMesh.position.z);
     this.powerUps.update(dt);
-    this.collision.update();
+    this.collision.update(dt);
     this.distance += speed * dt;
     this.biome.update(dt, this.distance);
     this.missions.updateDistance(this.distance);
@@ -298,13 +304,13 @@ export class GameScene implements IGameScene {
     this.hudDistance.textContent = `${Math.floor(this.distance)}m`;
   }
 
-  private showScorePopup(points: number): void {
+  private showScorePopup(points: number, label?: string): void {
     const container = document.getElementById('scorePopups');
     if (!container) return;
 
     const el = document.createElement('div');
     el.className = points > 10 ? 'score-popup golden' : 'score-popup';
-    el.textContent = `+${points}`;
+    el.textContent = label ? `${label} +${points}` : `+${points}`;
 
     // Position near center of screen
     el.style.left = `${45 + Math.random() * 10}%`;
@@ -313,6 +319,7 @@ export class GameScene implements IGameScene {
     container.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
   }
+
 
   private showBiomeToast(biome: string): void {
     const container = document.getElementById('missionToasts');
@@ -354,6 +361,7 @@ export class GameScene implements IGameScene {
     document.getElementById('mobileControls')?.classList.add('hidden');
     document.getElementById('powerupIndicator')?.classList.add('hidden');
     document.getElementById('missionPanel')?.classList.add('hidden');
+    document.getElementById('gameCanvas')?.classList.remove('slow-mo');
     this.input?.dispose();
     this.world?.dispose();
     this.collectibles?.dispose();

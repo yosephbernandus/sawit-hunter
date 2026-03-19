@@ -7,7 +7,7 @@ const BURST_LIFETIME = 0.8;
 const GRAVITY = -15;
 
 // Speed lines
-const MAX_LINES = 60;
+const MAX_LINES = 100;
 const LINE_LIFETIME = 0.4;
 const SPEED_LINE_THRESHOLD = 14; // speed above which lines appear
 
@@ -173,10 +173,18 @@ export class ParticleSystem {
     const intensity = (speed - SPEED_LINE_THRESHOLD) / (MAX_SPEED - SPEED_LINE_THRESHOLD);
     const spawnRate = 0.02 + (1 - intensity) * 0.06; // faster spawn at higher speed
 
+    // Scale particle size with speed intensity
+    const lineMat = this.linePoints.material as THREE.PointsMaterial;
+    lineMat.size = 0.08 + intensity * 0.07; // 0.08 → 0.15
+
     this.lineSpawnTimer -= dt;
     if (this.lineSpawnTimer <= 0) {
       this.lineSpawnTimer = spawnRate;
       this.spawnSpeedLine(speed, playerX, playerZ);
+      // Spawn extra line at high intensity
+      if (intensity > 0.7) {
+        this.spawnSpeedLine(speed, playerX, playerZ);
+      }
     }
 
     // Update existing lines

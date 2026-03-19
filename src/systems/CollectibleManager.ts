@@ -19,7 +19,7 @@ export interface ActiveCollectible {
   powerUp: PowerUpType | null;
 }
 
-const POWERUP_TYPES: PowerUpType[] = ['shield', 'magnet', 'bigBucket'];
+const POWERUP_TYPES: PowerUpType[] = ['shield', 'magnet', 'bigBucket', 'doubleScore', 'slowMo'];
 
 export class CollectibleManager {
   private scene: THREE.Scene;

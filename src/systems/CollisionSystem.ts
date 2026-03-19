@@ -2,7 +2,13 @@ import type { PlayerController } from './PlayerController.ts';
 import type { CollectibleManager, ActiveCollectible } from './CollectibleManager.ts';
 import type { ObstacleManager } from './ObstacleManager.ts';
 import type { EventBus } from '../core/EventBus.ts';
-import { SAWIT_POINTS, GOLDEN_SAWIT_POINTS } from '../core/Constants.ts';
+import {
+  SAWIT_POINTS,
+  GOLDEN_SAWIT_POINTS,
+  NEAR_MISS_Z_RANGE,
+  NEAR_MISS_POINTS,
+  NEAR_MISS_COOLDOWN,
+} from '../core/Constants.ts';
 
 const COLLECT_Z_RANGE = 1.8;
 const COLLECT_X_RANGE = 1.5;
@@ -15,6 +21,7 @@ export class CollisionSystem {
   private eventBus: EventBus;
   private shielded = false;
   private collectXMultiplier = 1; // for big bucket
+  private nearMissCooldown = 0;
 
   constructor(
     player: PlayerController,
@@ -36,7 +43,7 @@ export class CollisionSystem {
     this.collectXMultiplier = val;
   }
 
-  update(): void {
+  update(dt: number): void {
     const playerX = this.player.mesh.position.x;
     const playerZ = this.player.mesh.position.z;
     const playerLane = this.player.lane;
@@ -65,9 +72,15 @@ export class CollisionSystem {
       this.collectibles.removeCollectible(c);
     }
 
-    // Obstacle collisions
+    // Near-miss cooldown
+    if (this.nearMissCooldown > 0) {
+      this.nearMissCooldown -= dt;
+    }
+
+    // Obstacle collisions + near-miss detection
     for (const o of this.obstacles.getActive()) {
       const dz = Math.abs(o.mesh.position.z - playerZ);
+
       if (o.lane === playerLane && dz < OBSTACLE_Z_RANGE) {
         // Jumping clears ground obstacles (snake, log)
         if ((o.type === 'snake' || o.type === 'log') && this.player.jumpHeight > 0.6) {
@@ -88,6 +101,20 @@ export class CollisionSystem {
 
         this.eventBus.emit('OBSTACLE_HIT', { type: o.type });
         return;
+      }
+
+      // Near-miss: same lane, wider Z range, player is actively dodging
+      if (o.lane === playerLane && dz < NEAR_MISS_Z_RANGE && dz >= OBSTACLE_Z_RANGE) {
+        if (this.nearMissCooldown <= 0) {
+          const isDodging =
+            ((o.type === 'snake' || o.type === 'log') && this.player.jumpHeight > 0.6) ||
+            (o.type === 'branch' && this.player.isDucking);
+
+          if (isDodging) {
+            this.nearMissCooldown = NEAR_MISS_COOLDOWN;
+            this.eventBus.emit('NEAR_MISS', { points: NEAR_MISS_POINTS });
+          }
+        }
       }
     }
   }

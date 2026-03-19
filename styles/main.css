@@ -848,6 +848,11 @@ input:focus {
   letter-spacing: 2px;
 }
 
+/* Slow-Mo vignette */
+#gameCanvas.slow-mo {
+  box-shadow: inset 0 0 80px 30px rgba(100, 149, 237, 0.3);
+}
+
 /* Game over button row */
 .game-over-btns {
   display: flex;

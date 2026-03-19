@@ -25,6 +25,7 @@ export class DifficultyManager {
   private currentSpeed = BASE_SPEED;
   private obstacles: ObstacleManager;
   private currentScore = 0;
+  private speedMultiplier = 1;
 
   constructor(eventBus: EventBus, obstacles: ObstacleManager) {
     this.obstacles = obstacles;
@@ -81,8 +82,12 @@ export class DifficultyManager {
     }
   }
 
+  setSpeedMultiplier(m: number): void {
+    this.speedMultiplier = m;
+  }
+
   getSpeed(): number {
-    return this.currentSpeed;
+    return this.currentSpeed * this.speedMultiplier;
   }
 
   reset(): void {
@@ -92,5 +97,6 @@ export class DifficultyManager {
     this.obstacles.setSpawnInterval(OBSTACLE_SPAWN_INTERVAL_BASE);
     this.obstacles.setMultiLaneChance(0);
     this.obstacles.setTripleChance(0);
+    this.speedMultiplier = 1;
   }
 }

@@ -9,6 +9,9 @@ export class ScoreManager {
   private lastMilestone = 0;
   private eventBus: EventBus;
 
+  // External multiplier (from doubleScore powerup)
+  private scoreMultiplier = 1;
+
   constructor(eventBus: EventBus) {
     this.eventBus = eventBus;
     this.highScore = parseInt(localStorage.getItem(LS_KEY) ?? '0', 10);
@@ -16,10 +19,15 @@ export class ScoreManager {
     this.eventBus.on('SAWIT_CAUGHT', ({ points }) => {
       this.addScore(points);
     });
+
+    this.eventBus.on('NEAR_MISS', ({ points }) => {
+      this.addScore(points);
+    });
   }
 
   private addScore(points: number): void {
-    this.score += points;
+    const finalPoints = Math.round(points * this.scoreMultiplier);
+    this.score += finalPoints;
     if (this.score > this.highScore) {
       this.highScore = this.score;
       localStorage.setItem(LS_KEY, String(this.highScore));
@@ -35,10 +43,14 @@ export class ScoreManager {
     if (milestone > this.lastMilestone && milestone > 0) {
       this.lastMilestone = milestone;
       this.eventBus.emit('SPEED_MILESTONE', {
-        speed: 0, // filled by DifficultyManager
+        speed: 0,
         score: this.score,
       });
     }
+  }
+
+  setScoreMultiplier(m: number): void {
+    this.scoreMultiplier = m;
   }
 
   setStartingScore(s: number): void {
@@ -59,5 +71,6 @@ export class ScoreManager {
   reset(): void {
     this.score = 0;
     this.lastMilestone = 0;
+    this.scoreMultiplier = 1;
   }
 }

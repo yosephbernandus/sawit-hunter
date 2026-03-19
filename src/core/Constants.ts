@@ -70,6 +70,19 @@ export const SNAKE_COLOR = 0x2d5a1e;
 export const LOG_COLOR = 0x6b4226;
 export const BUCKET_COLOR = 0x888888;
 
+// Near-miss
+export const NEAR_MISS_Z_RANGE = 3.0;
+export const NEAR_MISS_POINTS = 5;
+export const NEAR_MISS_COOLDOWN = 0.5;
+
+// Double Score powerup
+export const DOUBLE_SCORE_DURATION = 10;
+export const DOUBLE_SCORE_MULTIPLIER = 2;
+
+// Slow-Mo powerup
+export const SLOW_MO_DURATION = 5;
+export const SLOW_MO_FACTOR = 0.5;
+
 // Biome
 export const BIOME_TRANSITION_DISTANCE = 500;
 export const BIOME_TRANSITION_DURATION = 3; // seconds of color lerp
