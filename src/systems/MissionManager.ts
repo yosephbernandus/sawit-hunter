@@ -4,6 +4,7 @@ import type { CoinManager } from './CoinManager.ts';
 
 const STORAGE_KEY = 'sawitHunterMissions';
 const MAX_ACTIVE = 3;
+const SAVE_INTERVAL = 2; // seconds — batch localStorage writes
 
 interface MissionState {
   id: string;
@@ -17,8 +18,12 @@ export class MissionManager {
   private definitions = new Map<string, MissionDefinition>();
 
   // Track cumulative distance across runs for cross-run missions
-  private cumulativeDistance = 0;
+  private cachedTotalDistance = 0;
   private lastEmittedDistance = 0;
+
+  // Debounced saving
+  private dirty = false;
+  private saveTimer = 0;
 
   constructor(eventBus: EventBus, coins: CoinManager) {
     this.eventBus = eventBus;
@@ -27,6 +32,9 @@ export class MissionManager {
     for (const def of MISSION_POOL) {
       this.definitions.set(def.id, def);
     }
+
+    // Cache total distance once at start instead of reading localStorage every frame
+    this.cachedTotalDistance = parseInt(localStorage.getItem('sawitHunterTotalDistance') ?? '0', 10);
 
     this.load();
     this.fillSlots();
@@ -53,26 +61,35 @@ export class MissionManager {
         m.progress = 0;
       }
     }
-    this.save();
+    this.saveNow(); // force save on run end
   }
 
   /** Feed cumulative distance for cross-run distance missions */
   updateDistance(runDistance: number): void {
-    const totalBase = parseInt(localStorage.getItem('sawitHunterTotalDistance') ?? '0', 10);
-    this.cumulativeDistance = totalBase + runDistance;
+    const totalDistance = this.cachedTotalDistance + runDistance;
 
     // Emit distance periodically (every 10m) to avoid spamming
     if (Math.floor(runDistance) - this.lastEmittedDistance >= 10) {
       this.lastEmittedDistance = Math.floor(runDistance);
-      // Pass both run and cumulative distance so missions can pick the right one
-      this.processMissionsForEvent('DISTANCE_CHANGED', { distance: runDistance, totalDistance: this.cumulativeDistance });
+      this.processMissionsForEvent('DISTANCE_CHANGED', { distance: runDistance, totalDistance });
+    }
+  }
+
+  /** Call from game loop to flush debounced saves */
+  update(dt: number): void {
+    if (this.dirty) {
+      this.saveTimer -= dt;
+      if (this.saveTimer <= 0) {
+        this.saveNow();
+      }
     }
   }
 
   /** Save cumulative distance at run end */
   saveTotalDistance(runDistance: number): void {
-    const prev = parseInt(localStorage.getItem('sawitHunterTotalDistance') ?? '0', 10);
-    localStorage.setItem('sawitHunterTotalDistance', String(prev + Math.floor(runDistance)));
+    const total = this.cachedTotalDistance + Math.floor(runDistance);
+    this.cachedTotalDistance = total;
+    localStorage.setItem('sawitHunterTotalDistance', String(total));
   }
 
   private subscribeEvents(): void {
@@ -128,7 +145,7 @@ export class MissionManager {
       this.fillSlots();
     }
 
-    if (changed) this.save();
+    if (changed) this.markDirty();
   }
 
   private fillSlots(): void {
@@ -143,7 +160,18 @@ export class MissionManager {
       activeIds.add(pick.id);
     }
 
-    this.save();
+    this.markDirty();
+  }
+
+  private markDirty(): void {
+    this.dirty = true;
+    this.saveTimer = SAVE_INTERVAL;
+  }
+
+  private saveNow(): void {
+    this.dirty = false;
+    this.saveTimer = 0;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.active));
   }
 
   private load(): void {
@@ -151,15 +179,10 @@ export class MissionManager {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as MissionState[];
-        // Only keep missions that still exist in the pool
         this.active = parsed.filter((m) => this.definitions.has(m.id));
       }
     } catch {
       this.active = [];
     }
-  }
-
-  private save(): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.active));
   }
 }

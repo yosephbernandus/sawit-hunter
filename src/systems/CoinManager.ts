@@ -6,6 +6,7 @@ export class CoinManager {
   private eventBus: EventBus;
   private balance: number;
   private multiplier = 1;
+  private dirty = false;
 
   constructor(eventBus: EventBus) {
     this.eventBus = eventBus;
@@ -26,19 +27,25 @@ export class CoinManager {
 
   add(amount: number): void {
     this.balance += Math.floor(amount * this.multiplier);
-    this.save();
+    this.dirty = true;
     this.eventBus.emit('COINS_CHANGED', { balance: this.balance });
   }
 
   spend(amount: number): boolean {
     if (this.balance < amount) return false;
     this.balance -= amount;
-    this.save();
+    this.saveNow();
     this.eventBus.emit('COINS_CHANGED', { balance: this.balance });
     return true;
   }
 
-  private save(): void {
+  /** Call periodically or at run end to flush pending saves */
+  flush(): void {
+    if (this.dirty) this.saveNow();
+  }
+
+  private saveNow(): void {
+    this.dirty = false;
     localStorage.setItem(STORAGE_KEY, String(this.balance));
   }
 }
