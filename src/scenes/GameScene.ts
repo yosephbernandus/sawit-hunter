@@ -17,6 +17,7 @@ import { createWorker } from '../rendering/ModelFactory.ts';
 import { WorkerAnimator } from '../systems/WorkerAnimator.ts';
 import { BiomeManager } from '../systems/BiomeManager.ts';
 import { MissionManager } from '../systems/MissionManager.ts';
+import { GoblinManager } from '../systems/GoblinManager.ts';
 import type { CoinManager } from '../systems/CoinManager.ts';
 import type { UpgradeManager } from '../systems/UpgradeManager.ts';
 import { SHIELD_DURATION, MAGNET_RANGE, SKY_COLOR, FOG_COLOR } from '../core/Constants.ts';
@@ -46,6 +47,7 @@ export class GameScene implements IGameScene {
   private biome!: BiomeManager;
   private missions!: MissionManager;
   private coins!: CoinManager;
+  private goblins!: GoblinManager;
 
   // State
   private distance = 0;
@@ -138,6 +140,7 @@ export class GameScene implements IGameScene {
       this.scoreManager, this.difficulty,
     );
     this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
+    this.goblins = new GoblinManager(this.scene, this.eventBus);
 
     // Missions & coins — reuse global coin manager, rebind to game event bus
     this.coins = this.globalCoins;
@@ -284,7 +287,18 @@ export class GameScene implements IGameScene {
     this.collectibles.update(dt, speed, this.playerMesh.position.z);
     this.obstacles.update(dt, speed, this.playerMesh.position.z);
     this.powerUps.update(dt);
+    this.goblins.update(dt, speed, this.playerMesh.position.z);
     this.collision.update(dt);
+
+    // Goblin collision (separate from lane-based obstacles)
+    if (this.invincibleTimer <= 0 && this.goblins.checkCollision(
+      this.playerMesh.position.x,
+      this.playerMesh.position.z,
+      this.player.jumpHeight,
+    )) {
+      this.eventBus.emit('OBSTACLE_HIT', { type: 'goblin' });
+    }
+
     this.distance += speed * dt;
     this.biome.update(dt, this.distance);
     this.missions.updateDistance(this.distance);
@@ -368,6 +382,7 @@ export class GameScene implements IGameScene {
     this.obstacles?.dispose();
     this.particles?.dispose();
     this.powerUps?.dispose();
+    this.goblins?.dispose();
     this.eventBus?.clear();
     const popups = document.getElementById('scorePopups');
     if (popups) popups.innerHTML = '';

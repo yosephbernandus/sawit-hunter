@@ -50,6 +50,12 @@ function createMaterials() {
     workerShirt: new THREE.MeshLambertMaterial({ color: C.WORKER_SHIRT_COLOR }),
     workerPants: new THREE.MeshLambertMaterial({ color: C.WORKER_PANTS_COLOR }),
     workerHat:   new THREE.MeshLambertMaterial({ color: C.WORKER_HAT_COLOR }),
+    goblinSkin:  new THREE.MeshLambertMaterial({ color: C.GOBLIN_SKIN_COLOR }),
+    goblinCloth: new THREE.MeshLambertMaterial({ color: C.GOBLIN_COLOR }),
+    goblinEye:   new THREE.MeshBasicMaterial({ color: 0xeeeecc }), // yellowish white
+    goblinPupil: new THREE.MeshBasicMaterial({ color: 0x111100 }), // dark squint
+    goblinMouth: new THREE.MeshBasicMaterial({ color: 0x330000 }), // dark grimace
+    goblinTooth: new THREE.MeshBasicMaterial({ color: 0xddddaa }), // yellowed teeth
   } as const;
 }
 

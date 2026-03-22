@@ -70,6 +70,15 @@ export const SNAKE_COLOR = 0x2d5a1e;
 export const LOG_COLOR = 0x6b4226;
 export const BUCKET_COLOR = 0x888888;
 
+// Goblin
+export const GOBLIN_START_SCORE = 250;
+export const GOBLIN_SPAWN_MIN = 7; // seconds between spawns
+export const GOBLIN_SPAWN_MAX = 14;
+export const GOBLIN_CROSS_SPEED_MIN = 3; // slow goblins
+export const GOBLIN_CROSS_SPEED_MAX = 5.5; // fast goblins
+export const GOBLIN_COLOR = 0x3d6b2e;
+export const GOBLIN_SKIN_COLOR = 0x7fbf4f;
+
 // Near-miss
 export const NEAR_MISS_Z_RANGE = 3.0;
 export const NEAR_MISS_POINTS = 5;
