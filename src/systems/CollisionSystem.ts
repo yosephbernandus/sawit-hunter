@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { PlayerController } from './PlayerController.ts';
 import type { CollectibleManager, ActiveCollectible } from './CollectibleManager.ts';
 import type { ObstacleManager } from './ObstacleManager.ts';
@@ -22,6 +23,7 @@ export class CollisionSystem {
   private shielded = false;
   private collectXMultiplier = 1; // for big bucket
   private nearMissCooldown = 0;
+  private _tmpPos = new THREE.Vector3(); // reusable vector to avoid GC
 
   constructor(
     player: PlayerController,
@@ -64,9 +66,10 @@ export class CollisionSystem {
         this.eventBus.emit('POWERUP_COLLECTED', { type: c.powerUp });
       } else {
         const points = c.golden ? GOLDEN_SAWIT_POINTS : SAWIT_POINTS;
+        this._tmpPos.copy(c.mesh.position);
         this.eventBus.emit('SAWIT_CAUGHT', {
           points,
-          position: c.mesh.position.clone(),
+          position: this._tmpPos,
         });
       }
       this.collectibles.removeCollectible(c);

@@ -64,6 +64,8 @@ export class GameScene implements IGameScene {
   private hudScore!: HTMLElement;
   private hudHighScore!: HTMLElement;
   private hudDistance!: HTMLElement;
+  private missionSlots: { el: HTMLElement; text: HTMLElement; prog: HTMLElement }[] = [];
+  private missionPanelDirty = false;
 
   private workerAnimator: WorkerAnimator | null = null;
   private onGameOver: (score: number, distance: number) => void;
@@ -183,8 +185,11 @@ export class GameScene implements IGameScene {
     });
 
     this.eventBus.on('SPEED_MILESTONE', () => {
-      this.cameraCtrl.shake(0.2, 0.15);
-      this.audio.play('milestone');
+      // Defer shake + audio to next frame to avoid stacking with score/mission/obstacle work
+      requestAnimationFrame(() => {
+        this.cameraCtrl.shake(0.2, 0.15);
+        this.audio.play('milestone');
+      });
     });
 
     this.eventBus.on('OBSTACLE_HIT', () => {
@@ -203,6 +208,7 @@ export class GameScene implements IGameScene {
       this.gameOver = true;
       this.missions.onRunEnd();
       this.missions.saveTotalDistance(this.distance);
+      this.coins.flush();
       this.workerAnimator?.startDeath();
       this.audio.stopAllSfx();
       this.audio.stopMusic();
@@ -218,7 +224,7 @@ export class GameScene implements IGameScene {
     });
 
     this.eventBus.on('MISSION_PROGRESS', () => {
-      this.updateMissionPanel();
+      this.missionPanelDirty = true;
     });
 
     // UI — cache DOM refs
@@ -231,6 +237,27 @@ export class GameScene implements IGameScene {
     this.hudHighScore.textContent = String(this.scoreManager.getHighScore());
 
     document.getElementById('missionPanel')?.classList.remove('hidden');
+
+    // Cache mission slot DOM elements (avoid innerHTML on every update)
+    this.missionSlots = [];
+    for (let i = 0; i < 3; i++) {
+      const el = document.getElementById(`mission${i}`);
+      if (!el) continue;
+      // Create persistent child elements
+      let text = el.querySelector('.mission-text') as HTMLElement | null;
+      let prog = el.querySelector('.mission-prog') as HTMLElement | null;
+      if (!text) {
+        text = document.createElement('span');
+        text.className = 'mission-text';
+        el.appendChild(text);
+      }
+      if (!prog) {
+        prog = document.createElement('span');
+        prog.className = 'mission-prog';
+        el.appendChild(prog);
+      }
+      this.missionSlots.push({ el, text, prog });
+    }
     this.updateMissionPanel();
 
     if (isMobile()) {
@@ -287,7 +314,7 @@ export class GameScene implements IGameScene {
     this.collectibles.update(dt, speed, this.playerMesh.position.z);
     this.obstacles.update(dt, speed, this.playerMesh.position.z);
     this.powerUps.update(dt);
-    this.goblins.update(dt, speed, this.playerMesh.position.z);
+    this.goblins.update(dt, speed, this.playerMesh.position.z, this.playerMesh.position.x);
     this.collision.update(dt);
 
     // Goblin collision (separate from lane-based obstacles)
@@ -302,6 +329,8 @@ export class GameScene implements IGameScene {
     this.distance += speed * dt;
     this.biome.update(dt, this.distance);
     this.missions.updateDistance(this.distance);
+    this.missions.update(dt);
+    if (this.missionPanelDirty) this.updateMissionPanel();
     this.particles.update(dt, speed, this.playerMesh.position.x, this.playerMesh.position.z);
     this.cameraCtrl.update(dt);
 
@@ -357,17 +386,18 @@ export class GameScene implements IGameScene {
 
   private updateMissionPanel(): void {
     const missions = this.missions.getActive();
-    for (let i = 0; i < 3; i++) {
-      const slot = document.getElementById(`mission${i}`);
-      if (!slot) continue;
+    for (let i = 0; i < this.missionSlots.length; i++) {
+      const slot = this.missionSlots[i]!;
       const m = missions[i];
       if (m) {
-        slot.classList.remove('hidden');
-        slot.innerHTML = `<span class="mission-text">${m.description}</span><span class="mission-prog">${Math.floor(m.progress)}/${m.target}</span>`;
+        slot.el.classList.remove('hidden');
+        slot.text.textContent = m.description;
+        slot.prog.textContent = `${Math.floor(m.progress)}/${m.target}`;
       } else {
-        slot.classList.add('hidden');
+        slot.el.classList.add('hidden');
       }
     }
+    this.missionPanelDirty = false;
   }
 
   exit(): void {

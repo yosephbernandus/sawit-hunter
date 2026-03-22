@@ -80,7 +80,7 @@ export class GoblinManager {
     this.spawnTimer = min + Math.random() * (max - min);
   }
 
-  update(dt: number, speed: number, playerZ: number): void {
+  update(dt: number, speed: number, playerZ: number, playerX = 0): void {
     if (this.currentScore < GOBLIN_START_SCORE) return;
 
     // Spawn timer
@@ -142,6 +142,13 @@ export class GoblinManager {
         // Face movement direction
         g.group.rotation.y = g.dirX > 0 ? -Math.PI / 2 : Math.PI / 2;
       }
+
+      // Head looks toward player (counter-rotate relative to body)
+      const dx = playerX - g.group.position.x;
+      const dz = playerZ - g.group.position.z;
+      const angleToPlayer = Math.atan2(dx, dz);
+      // Head Y rotation is relative to body, so subtract body rotation
+      g.refs.headGroup.rotation.y = angleToPlayer - g.group.rotation.y;
 
       // Remove if crossed off-screen or too far behind player
       const pastEnd = g.dirX > 0

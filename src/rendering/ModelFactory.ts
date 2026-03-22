@@ -289,6 +289,7 @@ export interface GoblinRefs {
   rightLeg: THREE.Mesh;
   leftArm: THREE.Mesh;
   rightArm: THREE.Mesh;
+  headGroup: THREE.Group;
 }
 
 export function createGoblin(): { group: THREE.Group; refs: GoblinRefs } {
@@ -302,78 +303,82 @@ export function createGoblin(): { group: THREE.Group; refs: GoblinRefs } {
   body.castShadow = true;
   group.add(body);
 
+  // Head group — rotates independently to face the player
+  const headGroup = new THREE.Group();
+  headGroup.position.y = 0.82;
+  group.add(headGroup);
+
   // Head — slightly squashed for that bahlil look
   const head = new THREE.Mesh(geos.goblinHead, mats.goblinSkin);
-  head.position.y = 0.82;
   head.scale.set(1.1, 0.9, 1.0); // wider, flatter
   head.castShadow = true;
-  group.add(head);
+  headGroup.add(head);
 
   // Ears (pointy, angled outward)
   const leftEar = new THREE.Mesh(geos.goblinEar, mats.goblinSkin);
-  leftEar.position.set(-0.20, 0.85, 0);
+  leftEar.position.set(-0.20, 0.03, 0);
   leftEar.rotation.z = 0.7;
-  group.add(leftEar);
+  headGroup.add(leftEar);
 
   const rightEar = new THREE.Mesh(geos.goblinEar, mats.goblinSkin);
-  rightEar.position.set(0.20, 0.85, 0);
+  rightEar.position.set(0.20, 0.03, 0);
   rightEar.rotation.z = -0.7;
-  group.add(rightEar);
+  headGroup.add(rightEar);
 
-  // --- Face ---
+  // --- Face (all relative to headGroup) ---
 
   // Angry brow ridges (angled inward = angry)
   const leftBrow = new THREE.Mesh(geos.goblinBrow, mats.goblinCloth);
-  leftBrow.position.set(-0.07, 0.90, 0.16);
-  leftBrow.rotation.z = -0.3; // angled down toward center = angry
-  group.add(leftBrow);
+  leftBrow.position.set(-0.07, 0.08, 0.16);
+  leftBrow.rotation.z = -0.3;
+  headGroup.add(leftBrow);
 
   const rightBrow = new THREE.Mesh(geos.goblinBrow, mats.goblinCloth);
-  rightBrow.position.set(0.07, 0.90, 0.16);
+  rightBrow.position.set(0.07, 0.08, 0.16);
   rightBrow.rotation.z = 0.3;
-  group.add(rightBrow);
+  headGroup.add(rightBrow);
 
   // Eyes (squinting — flattened scale Y)
   const leftEye = new THREE.Mesh(geos.goblinEye, mats.goblinEye);
-  leftEye.position.set(-0.07, 0.85, 0.17);
-  leftEye.scale.y = 0.5; // squinting
-  group.add(leftEye);
+  leftEye.position.set(-0.07, 0.03, 0.17);
+  leftEye.scale.y = 0.5;
+  headGroup.add(leftEye);
 
   const rightEye = new THREE.Mesh(geos.goblinEye, mats.goblinEye);
-  rightEye.position.set(0.07, 0.85, 0.17);
+  rightEye.position.set(0.07, 0.03, 0.17);
   rightEye.scale.y = 0.5;
-  group.add(rightEye);
+  headGroup.add(rightEye);
 
   // Pupils (small, dark, looking forward)
   const leftPupil = new THREE.Mesh(geos.goblinPupil, mats.goblinPupil);
-  leftPupil.position.set(-0.07, 0.85, 0.20);
+  leftPupil.position.set(-0.07, 0.03, 0.20);
   leftPupil.scale.y = 0.5;
-  group.add(leftPupil);
+  headGroup.add(leftPupil);
 
   const rightPupil = new THREE.Mesh(geos.goblinPupil, mats.goblinPupil);
-  rightPupil.position.set(0.07, 0.85, 0.20);
+  rightPupil.position.set(0.07, 0.03, 0.20);
   rightPupil.scale.y = 0.5;
-  group.add(rightPupil);
+  headGroup.add(rightPupil);
 
   // Wide flat nose
   const nose = new THREE.Mesh(geos.goblinNose, mats.goblinSkin);
-  nose.position.set(0, 0.80, 0.18);
-  nose.scale.set(1.2, 0.6, 0.8); // wide and flat
-  group.add(nose);
+  nose.position.set(0, -0.02, 0.18);
+  nose.scale.set(1.2, 0.6, 0.8);
+  headGroup.add(nose);
 
   // Grimace mouth
   const mouth = new THREE.Mesh(geos.goblinMouth, mats.goblinMouth);
-  mouth.position.set(0, 0.73, 0.17);
-  group.add(mouth);
+  mouth.position.set(0, -0.09, 0.17);
+  headGroup.add(mouth);
 
   // Teeth (2 visible teeth poking out of grimace)
   const leftTooth = new THREE.Mesh(geos.goblinTooth, mats.goblinTooth);
-  leftTooth.position.set(-0.03, 0.72, 0.19);
-  group.add(leftTooth);
+  leftTooth.position.set(-0.03, -0.10, 0.19);
+  headGroup.add(leftTooth);
 
   const rightTooth = new THREE.Mesh(geos.goblinTooth, mats.goblinTooth);
-  rightTooth.position.set(0.03, 0.72, 0.19);
-  group.add(rightTooth);
+  rightTooth.position.set(0.03, -0.10, 0.19);
+  headGroup.add(rightTooth);
 
   // Legs
   const leftLeg = new THREE.Mesh(geos.goblinLeg, mats.goblinSkin);
@@ -403,7 +408,7 @@ export function createGoblin(): { group: THREE.Group; refs: GoblinRefs } {
   label.scale.set(0.8, 0.2, 1);
   group.add(label);
 
-  return { group, refs: { leftLeg, rightLeg, leftArm, rightArm } };
+  return { group, refs: { leftLeg, rightLeg, leftArm, rightArm, headGroup } };
 }
 
 export function createGroundChunk(): THREE.Group {
