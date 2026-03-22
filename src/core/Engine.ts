@@ -14,6 +14,11 @@ export class Engine {
   private running = false;
   private animFrameId = 0;
 
+  // FPS tracking
+  private fpsFrames = 0;
+  private fpsTime = 0;
+  private fpsEl: HTMLElement | null = null;
+
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -71,6 +76,18 @@ export class Engine {
     }
 
     this.renderer.render(this.threeScene, this.camera);
+
+    // FPS counter
+    this.fpsFrames++;
+    this.fpsTime += dt;
+    if (this.fpsTime >= 0.5) {
+      const fps = Math.round(this.fpsFrames / this.fpsTime);
+      if (!this.fpsEl) this.fpsEl = document.getElementById('fpsCounter');
+      if (this.fpsEl) this.fpsEl.textContent = `${fps} FPS`;
+      this.fpsFrames = 0;
+      this.fpsTime = 0;
+    }
+
     this.animFrameId = requestAnimationFrame(this.loop);
   };
 

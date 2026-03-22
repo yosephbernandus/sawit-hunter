@@ -28,6 +28,19 @@ function createGeometries() {
     workerThigh:      new THREE.CylinderGeometry(0.09, 0.10, 0.32, 5),
     workerShin:       new THREE.CylinderGeometry(0.08, 0.09, 0.30, 5),
     workerHeldBucket: new THREE.CylinderGeometry(0.14, 0.10, 0.22, 7),
+    // Goblin — small, reuses simple shapes
+    goblinHead: new THREE.SphereGeometry(0.20, 6, 5), // wider bald head
+    goblinBody: new THREE.CylinderGeometry(0.16, 0.20, 0.4, 5),
+    goblinLeg:  new THREE.CylinderGeometry(0.05, 0.06, 0.25, 4),
+    goblinArm:  new THREE.CylinderGeometry(0.04, 0.05, 0.22, 4),
+    goblinEar:  new THREE.ConeGeometry(0.07, 0.16, 3),
+    // Face parts
+    goblinBrow:  new THREE.BoxGeometry(0.10, 0.03, 0.05), // angry brow ridge
+    goblinEye:   new THREE.SphereGeometry(0.04, 4, 3), // eyeball
+    goblinPupil: new THREE.SphereGeometry(0.025, 4, 3), // squinting pupil
+    goblinNose:  new THREE.SphereGeometry(0.05, 4, 3), // wide flat nose
+    goblinMouth: new THREE.BoxGeometry(0.12, 0.025, 0.04), // grimace
+    goblinTooth: new THREE.BoxGeometry(0.025, 0.03, 0.02), // visible teeth
   };
 }
 
@@ -240,6 +253,157 @@ export function createWorker(): { group: THREE.Group; refs: WorkerRefs } {
       rightElbowGroup,
     },
   };
+}
+
+// Cached goblin label texture (created once, reused by all goblins)
+let _goblinLabelMat: THREE.SpriteMaterial | null = null;
+
+function getGoblinLabelMaterial(): THREE.SpriteMaterial {
+  if (_goblinLabelMat) return _goblinLabelMat;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d')!;
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ff4444';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
+  ctx.strokeText('GOBLINB', 64, 16);
+  ctx.fillText('GOBLINB', 64, 16);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  _goblinLabelMat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthTest: false,
+  });
+  return _goblinLabelMat;
+}
+
+export interface GoblinRefs {
+  leftLeg: THREE.Mesh;
+  rightLeg: THREE.Mesh;
+  leftArm: THREE.Mesh;
+  rightArm: THREE.Mesh;
+}
+
+export function createGoblin(): { group: THREE.Group; refs: GoblinRefs } {
+  const mats = getMaterials();
+  const geos = getGeos();
+  const group = new THREE.Group();
+
+  // Body
+  const body = new THREE.Mesh(geos.goblinBody, mats.goblinCloth);
+  body.position.y = 0.45;
+  body.castShadow = true;
+  group.add(body);
+
+  // Head — slightly squashed for that bahlil look
+  const head = new THREE.Mesh(geos.goblinHead, mats.goblinSkin);
+  head.position.y = 0.82;
+  head.scale.set(1.1, 0.9, 1.0); // wider, flatter
+  head.castShadow = true;
+  group.add(head);
+
+  // Ears (pointy, angled outward)
+  const leftEar = new THREE.Mesh(geos.goblinEar, mats.goblinSkin);
+  leftEar.position.set(-0.20, 0.85, 0);
+  leftEar.rotation.z = 0.7;
+  group.add(leftEar);
+
+  const rightEar = new THREE.Mesh(geos.goblinEar, mats.goblinSkin);
+  rightEar.position.set(0.20, 0.85, 0);
+  rightEar.rotation.z = -0.7;
+  group.add(rightEar);
+
+  // --- Face ---
+
+  // Angry brow ridges (angled inward = angry)
+  const leftBrow = new THREE.Mesh(geos.goblinBrow, mats.goblinCloth);
+  leftBrow.position.set(-0.07, 0.90, 0.16);
+  leftBrow.rotation.z = -0.3; // angled down toward center = angry
+  group.add(leftBrow);
+
+  const rightBrow = new THREE.Mesh(geos.goblinBrow, mats.goblinCloth);
+  rightBrow.position.set(0.07, 0.90, 0.16);
+  rightBrow.rotation.z = 0.3;
+  group.add(rightBrow);
+
+  // Eyes (squinting — flattened scale Y)
+  const leftEye = new THREE.Mesh(geos.goblinEye, mats.goblinEye);
+  leftEye.position.set(-0.07, 0.85, 0.17);
+  leftEye.scale.y = 0.5; // squinting
+  group.add(leftEye);
+
+  const rightEye = new THREE.Mesh(geos.goblinEye, mats.goblinEye);
+  rightEye.position.set(0.07, 0.85, 0.17);
+  rightEye.scale.y = 0.5;
+  group.add(rightEye);
+
+  // Pupils (small, dark, looking forward)
+  const leftPupil = new THREE.Mesh(geos.goblinPupil, mats.goblinPupil);
+  leftPupil.position.set(-0.07, 0.85, 0.20);
+  leftPupil.scale.y = 0.5;
+  group.add(leftPupil);
+
+  const rightPupil = new THREE.Mesh(geos.goblinPupil, mats.goblinPupil);
+  rightPupil.position.set(0.07, 0.85, 0.20);
+  rightPupil.scale.y = 0.5;
+  group.add(rightPupil);
+
+  // Wide flat nose
+  const nose = new THREE.Mesh(geos.goblinNose, mats.goblinSkin);
+  nose.position.set(0, 0.80, 0.18);
+  nose.scale.set(1.2, 0.6, 0.8); // wide and flat
+  group.add(nose);
+
+  // Grimace mouth
+  const mouth = new THREE.Mesh(geos.goblinMouth, mats.goblinMouth);
+  mouth.position.set(0, 0.73, 0.17);
+  group.add(mouth);
+
+  // Teeth (2 visible teeth poking out of grimace)
+  const leftTooth = new THREE.Mesh(geos.goblinTooth, mats.goblinTooth);
+  leftTooth.position.set(-0.03, 0.72, 0.19);
+  group.add(leftTooth);
+
+  const rightTooth = new THREE.Mesh(geos.goblinTooth, mats.goblinTooth);
+  rightTooth.position.set(0.03, 0.72, 0.19);
+  group.add(rightTooth);
+
+  // Legs
+  const leftLeg = new THREE.Mesh(geos.goblinLeg, mats.goblinSkin);
+  leftLeg.position.set(-0.08, 0.13, 0);
+  leftLeg.castShadow = true;
+  group.add(leftLeg);
+
+  const rightLeg = new THREE.Mesh(geos.goblinLeg, mats.goblinSkin);
+  rightLeg.position.set(0.08, 0.13, 0);
+  rightLeg.castShadow = true;
+  group.add(rightLeg);
+
+  // Arms
+  const leftArm = new THREE.Mesh(geos.goblinArm, mats.goblinSkin);
+  leftArm.position.set(-0.24, 0.55, 0);
+  leftArm.castShadow = true;
+  group.add(leftArm);
+
+  const rightArm = new THREE.Mesh(geos.goblinArm, mats.goblinSkin);
+  rightArm.position.set(0.24, 0.55, 0);
+  rightArm.castShadow = true;
+  group.add(rightArm);
+
+  // "GOBLINB" label floating above head
+  const label = new THREE.Sprite(getGoblinLabelMaterial());
+  label.position.set(0, 1.15, 0);
+  label.scale.set(0.8, 0.2, 1);
+  group.add(label);
+
+  return { group, refs: { leftLeg, rightLeg, leftArm, rightArm } };
 }
 
 export function createGroundChunk(): THREE.Group {
