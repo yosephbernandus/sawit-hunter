@@ -236,6 +236,40 @@
       <div class="boss-hud-timer" id="bossTimer">30s</div>
     </div>
 
+    <!-- Turn-Based Battle Overlay -->
+    <div id="turnBattleOverlay" class="turn-battle hidden">
+      <div class="tb-arena">
+        <!-- Enemy info (top-right, Pokemon style) -->
+        <div class="tb-enemy-info">
+          <div class="tb-name">SAWITO WOWOWIT <span class="tb-level">Lv.99</span></div>
+          <div class="tb-hp-bar">
+            <div class="tb-hp-fill tb-hp-boss" id="tbBossHpFill"></div>
+          </div>
+          <div class="tb-hp-text" id="tbBossHpText">999/999</div>
+        </div>
+
+        <!-- Player info (bottom-left, Pokemon style) -->
+        <div class="tb-player-info">
+          <div class="tb-name">PEKERJA SAWIT <span class="tb-level">Lv.1</span></div>
+          <div class="tb-hp-bar">
+            <div class="tb-hp-fill tb-hp-player" id="tbPlayerHpFill"></div>
+          </div>
+          <div class="tb-hp-text" id="tbPlayerHpText">100/100</div>
+        </div>
+      </div>
+
+      <!-- Dialogue box -->
+      <div class="tb-dialogue" id="tbDialogue"></div>
+
+      <!-- Move buttons (2x2 grid) -->
+      <div class="tb-moves">
+        <button class="tb-move-btn" id="tbMove0" data-move="DEMO">DEMO</button>
+        <button class="tb-move-btn" id="tbMove1" data-move="LEMPAR NAMPAN MBG">LEMPAR NAMPAN MBG</button>
+        <button class="tb-move-btn" id="tbMove2" data-move="MOGOK KERJA">MOGOK KERJA</button>
+        <button class="tb-move-btn" id="tbMove3" data-move="MEMUJI">MEMUJI</button>
+      </div>
+    </div>
+
     <!-- FPS counter -->
     <div id="fpsCounter" class="fps-counter"></div>
 

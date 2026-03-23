@@ -209,7 +209,7 @@ export class BossBattle {
 
   private win(): void {
     this.cleanup();
-    this.eventBus.emit('BOSS_WON', { bonus: BOSS_WIN_BONUS });
+    this.eventBus.emit('BOSS_DODGE_SURVIVED', {});
   }
 
   private cleanup(): void {

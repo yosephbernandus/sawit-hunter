@@ -938,6 +938,180 @@ input:focus {
   80% { transform: translateX(calc(-50% + 4px)); }
 }
 
+/* Turn-Based Battle Overlay */
+.turn-battle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 27;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.turn-battle.hidden {
+  display: none;
+}
+
+.tb-arena {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.tb-enemy-info {
+  position: absolute;
+  top: 10%;
+  right: 5%;
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.9), rgba(10, 46, 26, 0.9));
+  border: 2px solid var(--accent-green);
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-width: 200px;
+  box-shadow: 0 0 12px var(--glow-green);
+}
+
+.tb-player-info {
+  position: absolute;
+  bottom: 10%;
+  left: 5%;
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.9), rgba(10, 46, 26, 0.9));
+  border: 2px solid var(--accent-orange);
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-width: 200px;
+  box-shadow: 0 0 12px var(--glow-orange);
+}
+
+.tb-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(8px, 1.8vw, 12px);
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
+
+.tb-level {
+  color: var(--accent-yellow);
+  font-size: clamp(7px, 1.4vw, 10px);
+}
+
+.tb-hp-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.tb-hp-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+.tb-hp-boss {
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent-green), #2ecc71);
+}
+
+.tb-hp-player {
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-yellow));
+}
+
+.tb-hp-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(6px, 1.2vw, 9px);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+  margin-top: 3px;
+}
+
+.tb-dialogue {
+  background: linear-gradient(135deg, #1a3a2a, #0d2618);
+  border: 3px solid var(--accent-green);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  min-height: 60px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(9px, 1.8vw, 13px);
+  color: var(--text-light);
+  line-height: 1.8;
+  box-shadow: 0 0 16px var(--glow-green);
+}
+
+.tb-moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.tb-move-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(8px, 1.6vw, 12px);
+  padding: clamp(10px, 2vh, 16px) 12px;
+  min-height: 48px;
+  border: 2px solid var(--accent-orange);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.9), rgba(10, 46, 26, 0.9));
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  box-shadow: 0 0 8px var(--glow-green);
+}
+
+.tb-move-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-orange));
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px var(--glow-orange);
+}
+
+.tb-move-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.tb-move-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint-glow {
+  border-color: var(--accent-yellow) !important;
+  animation: hintPulse 1s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4); }
+}
+
+@media (max-width: 768px) {
+  .tb-enemy-info,
+  .tb-player-info {
+    min-width: 150px;
+    padding: 8px 10px;
+  }
+
+  .tb-dialogue {
+    padding: 12px 14px;
+    min-height: 50px;
+  }
+
+  .tb-move-btn {
+    font-size: clamp(7px, 2.5vw, 10px);
+    padding: 10px 8px;
+  }
+}
+
 /* Game over button row */
 .game-over-btns {
   display: flex;

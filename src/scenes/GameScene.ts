@@ -19,6 +19,7 @@ import { BiomeManager } from '../systems/BiomeManager.ts';
 import { MissionManager } from '../systems/MissionManager.ts';
 import { GoblinManager } from '../systems/GoblinManager.ts';
 import { BossBattle } from '../systems/BossBattle.ts';
+import { TurnBattle } from '../systems/TurnBattle.ts';
 import type { CoinManager } from '../systems/CoinManager.ts';
 import type { UpgradeManager } from '../systems/UpgradeManager.ts';
 import { SHIELD_DURATION, MAGNET_RANGE, SKY_COLOR, FOG_COLOR, BOSS_TRIGGER_DISTANCE } from '../core/Constants.ts';
@@ -50,11 +51,13 @@ export class GameScene implements IGameScene {
   private coins!: CoinManager;
   private goblins!: GoblinManager;
   private bossBattle!: BossBattle;
+  private turnBattle!: TurnBattle;
 
   // State
   private distance = 0;
   private nextBossDistance = BOSS_TRIGGER_DISTANCE;
   private inBossFight = false;
+  private bossEncounter = 0;
   private playerMesh!: THREE.Group;
   private playerName = 'Player';
   private gameOver = false;
@@ -152,8 +155,10 @@ export class GameScene implements IGameScene {
     this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
     this.goblins = new GoblinManager(this.scene, this.eventBus);
     this.bossBattle = new BossBattle(this.scene, this.eventBus);
+    this.turnBattle = new TurnBattle(this.eventBus);
     this.nextBossDistance = BOSS_TRIGGER_DISTANCE;
     this.inBossFight = false;
+    this.bossEncounter = 0;
 
     // Missions & coins — reuse global coin manager, rebind to game event bus
     this.coins = this.globalCoins;
@@ -203,12 +208,16 @@ export class GameScene implements IGameScene {
       });
     });
 
-    this.eventBus.on('OBSTACLE_HIT', () => {
+    this.eventBus.on('OBSTACLE_HIT', ({ type }) => {
       if (this.gameOver) return;
-      if (this.invincibleTimer > 0) return; // still invincible from extra life
 
-      // Extra life: survive one hit
-      if (this.extraLives > 0) {
+      // Turn battle loss is always fatal (HP already tracked in battle)
+      const isBattleLoss = type === 'boss_battle';
+
+      if (!isBattleLoss && this.invincibleTimer > 0) return; // still invincible from extra life
+
+      // Extra life: survive one hit (not during turn battle)
+      if (!isBattleLoss && this.extraLives > 0) {
         this.extraLives--;
         this.invincibleTimer = 2; // 2s invincibility
         this.cameraCtrl.shake(0.4, 0.2);
@@ -218,13 +227,17 @@ export class GameScene implements IGameScene {
 
       this.gameOver = true;
 
-      // Clean up boss fight state if dying during boss phase
+      // Clean up boss fight / turn battle state if dying
+      if (this.turnBattle.isActive()) {
+        this.turnBattle.dispose();
+      }
       if (this.inBossFight) {
         this.inBossFight = false;
         this.obstacles.setSpawnPaused(false);
         this.collision.setSkipObstacles(false);
         this.bossBattle.dispose();
       }
+      this.paused = false;
 
       this.missions.onRunEnd();
       this.missions.saveTotalDistance(this.distance);
@@ -247,13 +260,20 @@ export class GameScene implements IGameScene {
       this.missionPanelDirty = true;
     });
 
+    this.eventBus.on('BOSS_DODGE_SURVIVED', () => {
+      this.paused = true;
+      this.turnBattle.start(this.bossEncounter);
+      this.bossEncounter++;
+    });
+
     this.eventBus.on('BOSS_WON', ({ bonus }) => {
+      this.paused = false;
       this.inBossFight = false;
       this.obstacles.setSpawnPaused(false);
       this.collision.setSkipObstacles(false);
       this.scoreManager.addScore(bonus);
       this.nextBossDistance = this.distance + BOSS_TRIGGER_DISTANCE;
-      this.showBiomeToast('SURVIVED SAWITO WOWOWITO! +500');
+      this.showBiomeToast('SELAMAT! Anda sekarang KOMISARIS! +500');
     });
 
     // UI — cache DOM refs
@@ -315,6 +335,7 @@ export class GameScene implements IGameScene {
   }
 
   private togglePause(): void {
+    if (this.turnBattle?.isActive()) return;
     this.paused = !this.paused;
     const overlay = document.getElementById('pauseOverlay');
     if (this.paused) {
@@ -331,6 +352,9 @@ export class GameScene implements IGameScene {
       this.particles.update(dt);
       return;
     }
+
+    // Turn battle updates even while paused (it's a DOM overlay)
+    this.turnBattle.update(dt);
 
     if (this.paused) return;
 
@@ -362,7 +386,13 @@ export class GameScene implements IGameScene {
         this.player.jumpHeight,
       );
       if (hit) {
-        this.eventBus.emit('OBSTACLE_HIT', { type: 'boss' });
+        // Shield absorbs MBG hit (same as normal obstacles)
+        if (this.collision.isShielded()) {
+          this.collision.setShielded(false);
+          this.eventBus.emit('POWERUP_EXPIRED', { type: 'shield' });
+        } else {
+          this.eventBus.emit('OBSTACLE_HIT', { type: 'boss' });
+        }
       }
     } else {
       // Goblin collision (separate from lane-based obstacles)
@@ -474,6 +504,7 @@ export class GameScene implements IGameScene {
     this.powerUps?.dispose();
     this.goblins?.dispose();
     this.bossBattle?.dispose();
+    this.turnBattle?.dispose();
     // Restore global eventBus on coins so shop/menu events work correctly
     this.globalCoins.setEventBus(this.globalEventBus);
     this.eventBus?.clear();

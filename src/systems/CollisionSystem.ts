@@ -42,6 +42,10 @@ export class CollisionSystem {
     this.shielded = val;
   }
 
+  isShielded(): boolean {
+    return this.shielded;
+  }
+
   setCollectXMultiplier(val: number): void {
     this.collectXMultiplier = val;
   }

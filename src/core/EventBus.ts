@@ -17,6 +17,7 @@ export type GameEvents = {
   COINS_CHANGED: { balance: number };
   NEAR_MISS: { points: number };
   BOSS_WON: { bonus: number };
+  BOSS_DODGE_SURVIVED: Record<string, never>;
 };
 
 type EventHandler<T> = (data: T) => void;
