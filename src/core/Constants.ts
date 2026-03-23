@@ -66,7 +66,7 @@ export const BARK_COLOR = 0x8b6914;
 export const LEAF_COLOR = 0x228b22;
 export const SAWIT_COLOR = 0xff6b2b;
 export const GOLDEN_COLOR = 0xffd700;
-export const SNAKE_COLOR = 0x2d5a1e;
+export const SNAKE_COLOR = 0xffffff;
 export const LOG_COLOR = 0x6b4226;
 export const BUCKET_COLOR = 0x888888;
 
@@ -95,6 +95,10 @@ export const SLOW_MO_FACTOR = 0.5;
 // Biome
 export const BIOME_TRANSITION_DISTANCE = 500;
 export const BIOME_TRANSITION_DURATION = 3; // seconds of color lerp
+
+// Boss battle
+export const BOSS_TRIGGER_DISTANCE = 1000;
+export const BOSS_WIN_BONUS = 500;
 
 // Worker character
 export const WORKER_SKIN_COLOR  = 0xc68642;

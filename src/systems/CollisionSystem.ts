@@ -23,6 +23,7 @@ export class CollisionSystem {
   private shielded = false;
   private collectXMultiplier = 1; // for big bucket
   private nearMissCooldown = 0;
+  private skipObstacles = false;
   private _tmpPos = new THREE.Vector3(); // reusable vector to avoid GC
 
   constructor(
@@ -43,6 +44,10 @@ export class CollisionSystem {
 
   setCollectXMultiplier(val: number): void {
     this.collectXMultiplier = val;
+  }
+
+  setSkipObstacles(val: boolean): void {
+    this.skipObstacles = val;
   }
 
   update(dt: number): void {
@@ -80,7 +85,8 @@ export class CollisionSystem {
       this.nearMissCooldown -= dt;
     }
 
-    // Obstacle collisions + near-miss detection
+    // Obstacle collisions + near-miss detection (skipped during boss fight)
+    if (this.skipObstacles) return;
     for (const o of this.obstacles.getActive()) {
       const dz = Math.abs(o.mesh.position.z - playerZ);
 

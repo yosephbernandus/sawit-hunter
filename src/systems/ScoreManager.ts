@@ -25,7 +25,7 @@ export class ScoreManager {
     });
   }
 
-  private addScore(points: number): void {
+  addScore(points: number): void {
     const finalPoints = Math.round(points * this.scoreMultiplier);
     this.score += finalPoints;
     if (this.score > this.highScore) {

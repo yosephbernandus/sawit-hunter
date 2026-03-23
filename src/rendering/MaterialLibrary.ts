@@ -31,6 +31,9 @@ function createMaterials() {
           emissiveIntensity: 0.4,
         }),
     snake: new THREE.MeshLambertMaterial({ color: C.SNAKE_COLOR }),
+    snakeEye:    new THREE.MeshBasicMaterial({ color: 0xffff00 }), // yellow eyes
+    snakePupil:  new THREE.MeshBasicMaterial({ color: 0x111100 }),
+    snakeTongue: new THREE.MeshBasicMaterial({ color: 0xcc0000 }), // red forked tongue
     log: new THREE.MeshLambertMaterial({ color: C.LOG_COLOR }),
     bucket: useStandard
       ? new THREE.MeshStandardMaterial({
@@ -56,6 +59,16 @@ function createMaterials() {
     goblinPupil: new THREE.MeshBasicMaterial({ color: 0x111100 }), // dark squint
     goblinMouth: new THREE.MeshBasicMaterial({ color: 0x330000 }), // dark grimace
     goblinTooth: new THREE.MeshBasicMaterial({ color: 0xddddaa }), // yellowed teeth
+    // Wowo boss
+    wowoSkin:    new THREE.MeshLambertMaterial({ color: 0xd4a574 }), // tan skin
+    wowoSuit:    new THREE.MeshLambertMaterial({ color: 0x2c3e50 }), // dark formal suit
+    wowoPants:   new THREE.MeshLambertMaterial({ color: 0x2c3e50 }),
+    wowoHat:     new THREE.MeshLambertMaterial({ color: 0x1a1a1a }), // dark peci/hat
+    wowoMustache: new THREE.MeshBasicMaterial({ color: 0x222222 }),
+    // MBG food container
+    mbgSteel:    new THREE.MeshLambertMaterial({ color: 0xc0c0c0 }), // stainless steel
+    mbgLid:      new THREE.MeshLambertMaterial({ color: 0xa8a8a8 }), // darker steel lid
+    mbgHandle:   new THREE.MeshLambertMaterial({ color: 0x888888 }),
   } as const;
 }
 
