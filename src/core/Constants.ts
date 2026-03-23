@@ -66,7 +66,7 @@ export const BARK_COLOR = 0x8b6914;
 export const LEAF_COLOR = 0x228b22;
 export const SAWIT_COLOR = 0xff6b2b;
 export const GOLDEN_COLOR = 0xffd700;
-export const SNAKE_COLOR = 0xffffff;
+export const SNAKE_COLOR = 0x2e8b57;
 export const LOG_COLOR = 0x6b4226;
 export const BUCKET_COLOR = 0x888888;
 
