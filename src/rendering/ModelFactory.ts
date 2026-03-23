@@ -337,8 +337,8 @@ function getGoblinLabelMaterial(): THREE.SpriteMaterial {
   ctx.fillStyle = '#ff4444';
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 3;
-  ctx.strokeText('GOBLINB', 64, 16);
-  ctx.fillText('GOBLINB', 64, 16);
+  ctx.strokeText('GOBLIL', 64, 16);
+  ctx.fillText('GOBLIL', 64, 16);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
@@ -600,8 +600,8 @@ function getWowoLabelMaterial(): THREE.SpriteMaterial {
   ctx.fillStyle = '#ff2222';
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 3;
-  ctx.strokeText('WOWO', 64, 16);
-  ctx.fillText('WOWO', 64, 16);
+  ctx.strokeText('SAWITO', 64, 16);
+  ctx.fillText('SAWITO', 64, 16);
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
   _wowoLabelMat = new THREE.SpriteMaterial({

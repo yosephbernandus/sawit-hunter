@@ -253,7 +253,7 @@ export class GameScene implements IGameScene {
       this.collision.setSkipObstacles(false);
       this.scoreManager.addScore(bonus);
       this.nextBossDistance = this.distance + BOSS_TRIGGER_DISTANCE;
-      this.showBiomeToast('SURVIVED WOWO! +500');
+      this.showBiomeToast('SURVIVED SAWITO WOWOWITO! +500');
     });
 
     // UI — cache DOM refs
@@ -383,7 +383,7 @@ export class GameScene implements IGameScene {
       this.obstacles.setSpawnPaused(true);
       this.collision.setSkipObstacles(true);
       this.bossBattle.start(this.playerMesh.position.z);
-      this.showBiomeToast('WOWO THROW MBG!');
+      this.showBiomeToast('SAWITO WOWOWITO THROW MBG!');
       this.cameraCtrl.shake(0.3, 0.2);
     }
 
