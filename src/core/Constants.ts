@@ -101,7 +101,7 @@ export const BOSS_TRIGGER_DISTANCE = 1000;
 export const BOSS_WIN_BONUS = 500;
 
 // Worker character
-export const WORKER_SKIN_COLOR  = 0xc68642;
+export const WORKER_SKIN_COLOR = 0xc68642;
 export const WORKER_SHIRT_COLOR = 0x4a7fcb;
 export const WORKER_PANTS_COLOR = 0x3d5a3e;
-export const WORKER_HAT_COLOR   = 0xd4aa70;
+export const WORKER_HAT_COLOR = 0xd4aa70;
