@@ -1,8 +1,7 @@
 # sawit-hunter
 
-Hanya bercanda
-Tidak untuk di DISTRIBUSIKAN, Hanya project iseng2 untuk HAHA HIHI
-Jangan Diseriusin
+Hanya Fun Game
+Tidak untuk di DISTRIBUSIKAN or DIVIRALKAN, Hanya project having fun
 
 To install dependencies:
 ```bash
