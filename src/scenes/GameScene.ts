@@ -18,9 +18,10 @@ import { WorkerAnimator } from '../systems/WorkerAnimator.ts';
 import { BiomeManager } from '../systems/BiomeManager.ts';
 import { MissionManager } from '../systems/MissionManager.ts';
 import { GoblinManager } from '../systems/GoblinManager.ts';
+import { BossBattle } from '../systems/BossBattle.ts';
 import type { CoinManager } from '../systems/CoinManager.ts';
 import type { UpgradeManager } from '../systems/UpgradeManager.ts';
-import { SHIELD_DURATION, MAGNET_RANGE, SKY_COLOR, FOG_COLOR } from '../core/Constants.ts';
+import { SHIELD_DURATION, MAGNET_RANGE, SKY_COLOR, FOG_COLOR, BOSS_TRIGGER_DISTANCE } from '../core/Constants.ts';
 import { resetBiomeColors } from '../rendering/MaterialLibrary.ts';
 import { isMobile } from '../utils/DeviceDetect.ts';
 import type { QualityTier } from '../utils/DeviceDetect.ts';
@@ -48,9 +49,12 @@ export class GameScene implements IGameScene {
   private missions!: MissionManager;
   private coins!: CoinManager;
   private goblins!: GoblinManager;
+  private bossBattle!: BossBattle;
 
   // State
   private distance = 0;
+  private nextBossDistance = BOSS_TRIGGER_DISTANCE;
+  private inBossFight = false;
   private playerMesh!: THREE.Group;
   private playerName = 'Player';
   private gameOver = false;
@@ -71,6 +75,7 @@ export class GameScene implements IGameScene {
   private onGameOver: (score: number, distance: number) => void;
   private upgradeManager: UpgradeManager;
   private globalCoins: CoinManager;
+  private globalEventBus: EventBus;
 
   constructor(
     scene: THREE.Scene,
@@ -79,6 +84,7 @@ export class GameScene implements IGameScene {
     audio: AudioManager,
     upgradeManager: UpgradeManager,
     globalCoins: CoinManager,
+    globalEventBus: EventBus,
     onGameOver: (score: number, distance: number) => void,
   ) {
     this.scene = scene;
@@ -87,6 +93,7 @@ export class GameScene implements IGameScene {
     this.audio = audio;
     this.upgradeManager = upgradeManager;
     this.globalCoins = globalCoins;
+    this.globalEventBus = globalEventBus;
     this.onGameOver = onGameOver;
   }
 
@@ -112,6 +119,7 @@ export class GameScene implements IGameScene {
 
     this.distance = 0;
     this.gameOver = false;
+    this.paused = false;
     this.eventBus = new EventBus();
 
     // Player
@@ -143,6 +151,9 @@ export class GameScene implements IGameScene {
     );
     this.biome = new BiomeManager(this.scene, this.eventBus, this.world);
     this.goblins = new GoblinManager(this.scene, this.eventBus);
+    this.bossBattle = new BossBattle(this.scene, this.eventBus);
+    this.nextBossDistance = BOSS_TRIGGER_DISTANCE;
+    this.inBossFight = false;
 
     // Missions & coins — reuse global coin manager, rebind to game event bus
     this.coins = this.globalCoins;
@@ -206,6 +217,15 @@ export class GameScene implements IGameScene {
       }
 
       this.gameOver = true;
+
+      // Clean up boss fight state if dying during boss phase
+      if (this.inBossFight) {
+        this.inBossFight = false;
+        this.obstacles.setSpawnPaused(false);
+        this.collision.setSkipObstacles(false);
+        this.bossBattle.dispose();
+      }
+
       this.missions.onRunEnd();
       this.missions.saveTotalDistance(this.distance);
       this.coins.flush();
@@ -225,6 +245,15 @@ export class GameScene implements IGameScene {
 
     this.eventBus.on('MISSION_PROGRESS', () => {
       this.missionPanelDirty = true;
+    });
+
+    this.eventBus.on('BOSS_WON', ({ bonus }) => {
+      this.inBossFight = false;
+      this.obstacles.setSpawnPaused(false);
+      this.collision.setSkipObstacles(false);
+      this.scoreManager.addScore(bonus);
+      this.nextBossDistance = this.distance + BOSS_TRIGGER_DISTANCE;
+      this.showBiomeToast('SURVIVED WOWO! +500');
     });
 
     // UI — cache DOM refs
@@ -311,22 +340,53 @@ export class GameScene implements IGameScene {
     this.input.update();
     this.player.update(dt);
     this.world.update(dt, speed, this.playerMesh.position.z);
+
+    // Collectibles always active (player can grab sawit during boss fight)
     this.collectibles.update(dt, speed, this.playerMesh.position.z);
+
+    // Obstacles & goblins always move with the world (so they don't freeze in place)
     this.obstacles.update(dt, speed, this.playerMesh.position.z);
-    this.powerUps.update(dt);
     this.goblins.update(dt, speed, this.playerMesh.position.z, this.playerMesh.position.x);
+
+    // Powerups always tick (shield visual, timers, magnet pull must work during boss too)
+    this.powerUps.update(dt);
     this.collision.update(dt);
 
-    // Goblin collision (separate from lane-based obstacles)
-    if (this.invincibleTimer <= 0 && this.goblins.checkCollision(
-      this.playerMesh.position.x,
-      this.playerMesh.position.z,
-      this.player.jumpHeight,
-    )) {
-      this.eventBus.emit('OBSTACLE_HIT', { type: 'goblin' });
+    if (this.inBossFight) {
+      // During boss fight: boss spawns MBGs, no new obstacles spawn (existing ones just scroll past)
+      const hit = this.bossBattle.update(
+        dt,
+        speed,
+        this.playerMesh.position.x,
+        this.playerMesh.position.z,
+        this.player.jumpHeight,
+      );
+      if (hit) {
+        this.eventBus.emit('OBSTACLE_HIT', { type: 'boss' });
+      }
+    } else {
+      // Goblin collision (separate from lane-based obstacles)
+      if (this.invincibleTimer <= 0 && this.goblins.checkCollision(
+        this.playerMesh.position.x,
+        this.playerMesh.position.z,
+        this.player.jumpHeight,
+      )) {
+        this.eventBus.emit('OBSTACLE_HIT', { type: 'goblin' });
+      }
     }
 
     this.distance += speed * dt;
+
+    // Boss fight trigger
+    if (!this.inBossFight && this.distance >= this.nextBossDistance) {
+      this.inBossFight = true;
+      this.obstacles.setSpawnPaused(true);
+      this.collision.setSkipObstacles(true);
+      this.bossBattle.start(this.playerMesh.position.z);
+      this.showBiomeToast('WOWO THROW MBG!');
+      this.cameraCtrl.shake(0.3, 0.2);
+    }
+
     this.biome.update(dt, this.distance);
     this.missions.updateDistance(this.distance);
     this.missions.update(dt);
@@ -413,9 +473,14 @@ export class GameScene implements IGameScene {
     this.particles?.dispose();
     this.powerUps?.dispose();
     this.goblins?.dispose();
+    this.bossBattle?.dispose();
+    // Restore global eventBus on coins so shop/menu events work correctly
+    this.globalCoins.setEventBus(this.globalEventBus);
     this.eventBus?.clear();
     const popups = document.getElementById('scorePopups');
     if (popups) popups.innerHTML = '';
+    const toasts = document.getElementById('missionToasts');
+    if (toasts) toasts.innerHTML = '';
     document.getElementById('pauseOverlay')?.classList.add('hidden');
     if (this.pauseKeyHandler) {
       document.removeEventListener('keydown', this.pauseKeyHandler);

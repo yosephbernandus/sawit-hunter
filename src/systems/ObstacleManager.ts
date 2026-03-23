@@ -27,10 +27,11 @@ export class ObstacleManager {
   private enabledTypes: ObstacleType[] = [];
   private multiLaneChance = 0; // 0–1, set by DifficultyManager
   private tripleChance = 0; // 0–1, chance that a multi-lane pattern uses 3 obstacles
+  private spawnPaused = false;
 
-  private snakePool = new ObjectPool<THREE.Mesh>(
+  private snakePool = new ObjectPool<THREE.Group>(
     () => createSnake(),
-    (m) => { m.visible = true; },
+    (g) => { g.visible = true; },
     6,
   );
   private logPool = new ObjectPool<THREE.Mesh>(
@@ -66,14 +67,18 @@ export class ObstacleManager {
     this.tripleChance = chance;
   }
 
+  setSpawnPaused(paused: boolean): void {
+    this.spawnPaused = paused;
+  }
+
   update(dt: number, speed: number, playerZ: number): void {
-    if (this.enabledTypes.length === 0) return;
-
-    this.spawnTimer -= dt;
-
-    if (this.spawnTimer <= 0) {
-      this.spawnPattern(playerZ);
-      this.spawnTimer = this.spawnInterval;
+    // Spawn new obstacles only when not paused and types are configured
+    if (!this.spawnPaused && this.enabledTypes.length > 0) {
+      this.spawnTimer -= dt;
+      if (this.spawnTimer <= 0) {
+        this.spawnPattern(playerZ);
+        this.spawnTimer = this.spawnInterval;
+      }
     }
 
     // Move obstacles toward player
@@ -246,7 +251,7 @@ export class ObstacleManager {
     this.scene.remove(o.mesh);
     o.mesh.visible = false;
     switch (o.type) {
-      case 'snake': this.snakePool.release(o.mesh as THREE.Mesh); break;
+      case 'snake': this.snakePool.release(o.mesh as THREE.Group); break;
       case 'log': this.logPool.release(o.mesh as THREE.Mesh); break;
       case 'branch': this.branchPool.release(o.mesh as THREE.Group); break;
     }

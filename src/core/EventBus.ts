@@ -16,6 +16,7 @@ export type GameEvents = {
   MISSION_PROGRESS: { missionId: string; progress: number; target: number };
   COINS_CHANGED: { balance: number };
   NEAR_MISS: { points: number };
+  BOSS_WON: { bonus: number };
 };
 
 type EventHandler<T> = (data: T) => void;

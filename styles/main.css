@@ -849,6 +849,10 @@ input:focus {
   .mission-prog {
     font-size: 7px;
   }
+
+  .boss-hud {
+    top: max(60px, env(safe-area-inset-top, 60px));
+  }
 }
 
 @media (min-width: 769px) {
@@ -884,6 +888,54 @@ input:focus {
 /* Slow-Mo vignette */
 #gameCanvas.slow-mo {
   box-shadow: inset 0 0 80px 30px rgba(100, 149, 237, 0.3);
+}
+
+/* Boss Battle HUD */
+.boss-hud {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  animation: bossShake 0.5s ease-in-out;
+}
+
+.boss-hud.hidden {
+  display: none;
+}
+
+.boss-hud-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(16px, 4vw, 24px);
+  color: #e74c3c;
+  text-shadow: 0 0 16px rgba(231, 76, 60, 0.6), 2px 2px 0 #000;
+}
+
+.boss-hud-sub {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(7px, 1.5vw, 10px);
+  color: var(--accent-yellow);
+  text-shadow: 1px 1px 0 #000;
+}
+
+.boss-hud-timer {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(20px, 5vw, 32px);
+  color: var(--text-light);
+  text-shadow: 0 0 12px var(--glow-orange), 2px 2px 0 #000;
+}
+
+@keyframes bossShake {
+  0%, 100% { transform: translateX(-50%); }
+  20% { transform: translateX(calc(-50% - 8px)); }
+  40% { transform: translateX(calc(-50% + 8px)); }
+  60% { transform: translateX(calc(-50% - 4px)); }
+  80% { transform: translateX(calc(-50% + 4px)); }
 }
 
 /* Game over button row */
