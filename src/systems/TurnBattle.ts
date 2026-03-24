@@ -2,11 +2,6 @@ import type { EventBus } from '../core/EventBus.ts';
 
 type BattleState = 'idle' | 'intro' | 'choosing' | 'animating' | 'won' | 'lost';
 
-interface TextQueueItem {
-  text: string;
-  onDone?: () => void;
-}
-
 interface WrongMove {
   name: string;
   playerText: string;
@@ -23,37 +18,37 @@ const WRONG_MOVE_POOL: WrongMove[] = [
   {
     name: 'DEMO',
     playerText: 'PEKERJA SAWIT used DEMO!',
-    responseText: "Not very effective... WOWOWIT's passive: ANTI-DEMO ASHENG!",
+    responseText: "Not very effective... WOWOWITO's passive: ANTI-DEMO ASHENG!",
   },
   {
     name: 'LEMPAR NAMPAN MBG',
     playerText: 'PEKERJA SAWIT used LEMPAR NAMPAN MBG!',
-    responseText: "WOWOWIT caught it! He's used to this...",
+    responseText: "WOWOWITO caught it! He's used to this...",
   },
   {
     name: 'MOGOK KERJA',
     playerText: 'PEKERJA SAWIT used MOGOK KERJA!',
-    responseText: "No effect... WOWOWIT doesn't care!",
+    responseText: "No effect... WOWOWITO doesn't care!",
   },
   {
     name: 'LAPOR GAPEKA',
     playerText: 'PEKERJA SAWIT used LAPOR GAPEKA!',
-    responseText: 'WOWOWIT has IMUNITAS POLITIK!',
+    responseText: 'WOWOWITO has IMUNITAS POLITIK!',
   },
   {
     name: 'VIRAL DI MEDSOS',
     playerText: 'PEKERJA SAWIT used VIRAL DI MEDSOS!',
-    responseText: 'WOWOWIT used BLOKIR INTERNET!',
+    responseText: 'WOWOWITO used BLOKIR INTERNET!',
   },
   {
     name: 'PANGGIL SERIKAT',
     playerText: 'PEKERJA SAWIT used PANGGIL SERIKAT!',
-    responseText: 'WOWOWIT used INTIMIDASI! Serikat bubar...',
+    responseText: 'WOWOWITO used INTIMIDASI! Serikat bubar...',
   },
   {
     name: 'TULIS SURAT',
     playerText: 'PEKERJA SAWIT used TULIS SURAT!',
-    responseText: "WOWOWIT can't read... it's not very effective!",
+    responseText: "WOWOWITO can't read... it's not very effective!",
   },
   {
     name: 'PROTES DI DEPEER',
@@ -63,7 +58,7 @@ const WRONG_MOVE_POOL: WrongMove[] = [
   {
     name: 'BIKIN PETISI',
     playerText: 'PEKERJA SAWIT used BIKIN PETISI!',
-    responseText: 'WOWOWIT used TANDA TANGAN PALSU! Petisi dibatalkan!',
+    responseText: 'WOWOWITO used TANDA TANGAN PALSU! Petisi dibatalkan!',
   },
   {
     name: 'HUBUNGI OMBUDSBOY',
@@ -73,9 +68,9 @@ const WRONG_MOVE_POOL: WrongMove[] = [
 ];
 
 const COUNTERATTACKS = [
-  { text: 'WOWOWIT used SURAT PERINGATAN!', baseDamage: 20 },
-  { text: 'WOWOWIT used POTONG GAJI!', baseDamage: 25 },
-  { text: 'WOWOWIT used MUTASI KE PEDALAMAN!', baseDamage: 30 },
+  { text: 'WOWOWITO used SURAT PERINGATAN!', baseDamage: 20 },
+  { text: 'WOWOWITO used POTONG GAJI!', baseDamage: 25 },
+  { text: 'WOWOWITO used MUTASI KE PEDALAMAN!', baseDamage: 30 },
 ];
 
 export class TurnBattle {
@@ -84,22 +79,19 @@ export class TurnBattle {
   private playerHp = PLAYER_MAX_HP;
   private bossHp = BOSS_HP;
   private wrongMoveCount = 0;
-  private encounter = 0; // which boss encounter (0-indexed)
+  private encounter = 0;
   private praisesNeeded = 1;
   private praisesGiven = 0;
 
   // Current encounter's randomly picked wrong moves
   private activeWrongMoves: WrongMove[] = [];
 
-  // Typewriter
-  private textQueue: TextQueueItem[] = [];
-  private currentText = '';
-  private displayedChars = 0;
-  private charTimer = 0;
-
-  // Pause timer for delays between steps
-  private pauseTimer = 0;
-  private _pendingCallback: (() => void) | null = null;
+  // Typewriter — simplified: single current item, queue is a plain array
+  private typeQueue: { text: string; delay: number; onDone?: () => void }[] = [];
+  private typeCurrent: { text: string; delay: number; onDone?: () => void } | null = null;
+  private typeChars = 0;
+  private typeTimer = 0;
+  private delayTimer = 0; // pause between dialogue lines
 
   // DOM refs
   private overlay: HTMLElement;
@@ -110,7 +102,7 @@ export class TurnBattle {
   private bossHpText: HTMLElement;
   private moveButtons: HTMLButtonElement[];
 
-  // Track which button index is MEMUJI (randomized each encounter)
+  // Track which button index is MEMUJI (randomized each reshuffle)
   private memujiButtonIndex = 3;
 
   // Click handlers for cleanup
@@ -129,7 +121,6 @@ export class TurnBattle {
       document.getElementById(`tbMove${i}`) as HTMLButtonElement,
     );
 
-    // Each button handler checks dynamically whether it's MEMUJI or a wrong move
     for (let i = 0; i < 4; i++) {
       const idx = i;
       const handler = () => this.onButtonPressed(idx);
@@ -139,35 +130,36 @@ export class TurnBattle {
   }
 
   start(encounterNumber: number): void {
+    // Guard: clean up if somehow called while active
+    if (this.state !== 'idle') {
+      this.clearAllGlow();
+    }
+
     this.state = 'intro';
     this.encounter = encounterNumber;
     this.playerHp = PLAYER_MAX_HP;
     this.bossHp = BOSS_HP;
     this.wrongMoveCount = 0;
-    this.praisesNeeded = Math.min(encounterNumber + 1, 3); // boss 1: 1, boss 2: 2, boss 3+: 3
+    this.praisesNeeded = Math.min(encounterNumber + 1, 3);
     this.praisesGiven = 0;
-    this.textQueue = [];
-    this.currentText = '';
-    this.displayedChars = 0;
-    this.charTimer = 0;
-    this.pauseTimer = 0;
-    this._pendingCallback = null;
 
-    // Pick 3 random wrong moves for this encounter
+    // Reset typewriter
+    this.typeQueue = [];
+    this.typeCurrent = null;
+    this.typeChars = 0;
+    this.typeTimer = 0;
+    this.delayTimer = 0;
+
     this.pickRandomMoves();
-
     this.updateHpBars();
     this.setMovesEnabled(false);
     this.overlay.classList.remove('hidden');
 
-    // Remove hint glow from previous runs
-    this.moveButtons[this.memujiButtonIndex]?.classList.remove('hint-glow');
-
-    this.enqueueText('A wild SAWITO WOWOWIT appeared!', () => {
-      this.enqueueText('What will PEKERJA SAWIT do?', () => {
+    this.say('A wild SAWITO WOWOWITO appeared!', () => {
+      this.say('What will PEKERJA SAWIT do?', () => {
         this.state = 'choosing';
         this.setMovesEnabled(true);
-      });
+      }, 1.2);
     });
   }
 
@@ -178,85 +170,89 @@ export class TurnBattle {
   update(dt: number): void {
     if (this.state === 'idle') return;
 
-    // Handle pause timer
-    if (this.pauseTimer > 0) {
-      this.pauseTimer -= dt;
-      if (this.pauseTimer <= 0) {
-        this.advanceQueue();
+    // Inter-line delay
+    if (this.delayTimer > 0) {
+      this.delayTimer -= dt;
+      if (this.delayTimer <= 0) {
+        this.startNextItem();
       }
       return;
     }
 
-    // Typewriter effect
-    if (this.currentText && this.displayedChars < this.currentText.length) {
-      this.charTimer += dt;
-      while (this.charTimer >= CHAR_DELAY && this.displayedChars < this.currentText.length) {
-        this.charTimer -= CHAR_DELAY;
-        this.displayedChars++;
-        this.dialogueEl.textContent = this.currentText.slice(0, this.displayedChars);
+    if (!this.typeCurrent) return;
+
+    const text = this.typeCurrent.text;
+
+    // Typewriter reveal
+    if (this.typeChars < text.length) {
+      this.typeTimer += dt;
+      while (this.typeTimer >= CHAR_DELAY && this.typeChars < text.length) {
+        this.typeTimer -= CHAR_DELAY;
+        this.typeChars++;
+      }
+      this.dialogueEl.textContent = text.slice(0, this.typeChars);
+    }
+
+    // Finished revealing current line
+    if (this.typeChars >= text.length) {
+      const done = this.typeCurrent.onDone;
+      this.typeCurrent = null;
+
+      if (done) {
+        // Run callback, which may enqueue more text
+        done();
       }
 
-      // Text finished revealing
-      if (this.displayedChars >= this.currentText.length) {
-        const item = this.textQueue[0];
-        this.textQueue.shift();
-        if (item?.onDone) {
-          this.pauseTimer = 0.6;
-          this._pendingCallback = item.onDone;
-        } else if (this.textQueue.length > 0) {
-          this.pauseTimer = 0.6;
-        }
+      // If callback enqueued more text, use next item's delay before showing it
+      if (this.typeQueue.length > 0 && !this.typeCurrent) {
+        this.delayTimer = this.typeQueue[0]!.delay;
       }
     }
   }
 
-  private advanceQueue(): void {
-    if (this._pendingCallback) {
-      const cb = this._pendingCallback;
-      this._pendingCallback = null;
-      cb();
-      return;
-    }
+  /** Enqueue a dialogue line. delay = seconds to wait before this line starts (default 0.8). */
+  private say(text: string, onDone?: () => void, delay = 0.8): void {
+    this.typeQueue.push({ text, onDone, delay });
 
-    if (this.textQueue.length > 0) {
-      const next = this.textQueue[0]!;
-      this.currentText = next.text;
-      this.displayedChars = 0;
-      this.charTimer = 0;
-      this.dialogueEl.textContent = '';
+    // If idle (no current text being typed), kick off immediately
+    if (!this.typeCurrent && this.delayTimer <= 0) {
+      this.startNextItem();
     }
   }
 
-  private enqueueText(text: string, onDone?: () => void): void {
-    const wasEmpty = this.textQueue.length === 0 && !this.currentText;
-    this.textQueue.push({ text, onDone });
-
-    if (wasEmpty || (this.displayedChars >= this.currentText.length && !this._pendingCallback)) {
-      const item = this.textQueue[0]!;
-      this.currentText = item.text;
-      this.displayedChars = 0;
-      this.charTimer = 0;
-      this.dialogueEl.textContent = '';
-    }
+  private startNextItem(): void {
+    if (this.typeQueue.length === 0) return;
+    this.typeCurrent = this.typeQueue.shift()!;
+    this.typeChars = 0;
+    this.typeTimer = 0;
+    this.dialogueEl.textContent = '';
   }
 
   private onButtonPressed(btnIndex: number): void {
+    // Guard: only allow clicks during choosing state
+    if (this.state !== 'choosing') return;
+
+    // Immediately lock out further clicks
+    this.state = 'animating';
+    this.setMovesEnabled(false);
+
     if (btnIndex === this.memujiButtonIndex) {
-      this.onMemujiSelected();
+      this.doMemuji();
     } else {
-      // Map button index to wrong move index (skip the MEMUJI slot)
       let wrongIdx = 0;
       for (let i = 0; i < 4; i++) {
         if (i === this.memujiButtonIndex) continue;
         if (i === btnIndex) break;
         wrongIdx++;
       }
-      this.onWrongMoveSelected(wrongIdx);
+      this.doWrongMove(wrongIdx);
     }
   }
 
   private pickRandomMoves(): void {
-    // Shuffle wrong moves and pick 3
+    // Remove glow from ALL buttons before reshuffling
+    this.clearAllGlow();
+
     const shuffled = [...WRONG_MOVE_POOL];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -264,10 +260,8 @@ export class TurnBattle {
     }
     this.activeWrongMoves = shuffled.slice(0, 3);
 
-    // Randomize which button slot gets MEMUJI
     this.memujiButtonIndex = Math.floor(Math.random() * 4);
 
-    // Assign labels: wrong moves fill non-MEMUJI slots
     let wrongIdx = 0;
     for (let i = 0; i < 4; i++) {
       if (i === this.memujiButtonIndex) {
@@ -279,116 +273,107 @@ export class TurnBattle {
     }
   }
 
-  /** Hint glow threshold scales with encounter: boss 1 → after 2, boss 2 → after 3, boss 3+ → after 4 */
   private get hintThreshold(): number {
     return Math.min(2 + this.encounter, 4);
   }
 
-  /** Counterattack damage scales: +5 per encounter */
   private getCounterDamage(baseDamage: number): number {
     return baseDamage + this.encounter * 5;
   }
 
-  private onWrongMoveSelected(idx: number): void {
-    if (this.state !== 'choosing') return;
-    this.state = 'animating';
-    this.setMovesEnabled(false);
-
+  private doWrongMove(idx: number): void {
     const move = this.activeWrongMoves[idx]!;
     this.wrongMoveCount++;
 
-    this.enqueueText(move.playerText, () => {
-      this.enqueueText(move.responseText, () => {
-        // Counterattack
+    this.say(move.playerText, () => {
+      this.say(move.responseText, () => {
         const counter = COUNTERATTACKS[Math.floor(Math.random() * COUNTERATTACKS.length)]!;
         const damage = this.getCounterDamage(counter.baseDamage);
-        this.enqueueText(counter.text, () => {
+        this.say(counter.text, () => {
           this.playerHp = Math.max(0, this.playerHp - damage);
           this.updateHpBars();
 
           if (this.playerHp <= 0) {
-            this.enqueueText('PEKERJA SAWIT fainted!', () => {
-              this.state = 'lost';
-              this.pauseTimer = 1.0;
-              this._pendingCallback = () => {
-                this.hide();
-                this.eventBus.emit('OBSTACLE_HIT', { type: 'boss_battle' });
-              };
-            });
+            this.doPlayerFainted();
           } else {
+            this.pickRandomMoves();
+
             if (this.wrongMoveCount >= this.hintThreshold) {
               this.moveButtons[this.memujiButtonIndex]?.classList.add('hint-glow');
             }
 
-            // Reshuffle wrong moves for variety
-            this.pickRandomMoves();
-
-            this.enqueueText('What will PEKERJA SAWIT do?', () => {
+            this.say('What will PEKERJA SAWIT do?', () => {
               this.state = 'choosing';
               this.setMovesEnabled(true);
-            });
+            }, 1.2);
           }
-        });
-      });
+        }, 1.2);
+      }, 1.0);
     });
   }
 
-  private onMemujiSelected(): void {
-    if (this.state !== 'choosing') return;
-    this.state = 'animating';
-    this.setMovesEnabled(false);
-
+  private doMemuji(): void {
     this.praisesGiven++;
 
-    this.enqueueText('PEKERJA SAWIT used MEMUJI!', () => {
+    this.say('PEKERJA SAWIT used MEMUJI!', () => {
       if (this.praisesGiven >= this.praisesNeeded) {
-        // Final praise — win!
         this.bossHp = 0;
         this.updateHpBars();
-        this.enqueueText('SUPER EFFECTIVE! WOWOWIT is flattered! Promoted to KOMISARIS!', () => {
+        this.say('SUPER EFFECTIVE! WOWOWITO is flattered! Promoted to KOMISARIS!', () => {
           this.state = 'won';
-          this.pauseTimer = 1.5;
-          this._pendingCallback = () => {
-            this.hide();
-            this.eventBus.emit('BOSS_WON', { bonus: BOSS_WIN_BONUS });
-          };
-        });
+          this.delayTimer = 2.0;
+          this.typeQueue.push({
+            text: '',
+            delay: 0,
+            onDone: () => {
+              this.hide();
+              this.eventBus.emit('BOSS_WON', { bonus: BOSS_WIN_BONUS });
+            },
+          });
+        }, 1.2);
       } else {
-        // Partial praise — boss HP drops visually, but not dead yet
         const hpPerPraise = BOSS_HP / this.praisesNeeded;
         this.bossHp = Math.max(0, BOSS_HP - hpPerPraise * this.praisesGiven);
         this.updateHpBars();
 
         const remaining = this.praisesNeeded - this.praisesGiven;
-        this.enqueueText(
-          `It's somewhat effective... WOWOWIT wants ${remaining} more praise!`,
+        this.say(
+          `It's somewhat effective... WOWOWITO wants ${remaining} more praise!`,
           () => {
-            // Boss counterattacks even after partial praise
             const counter = COUNTERATTACKS[Math.floor(Math.random() * COUNTERATTACKS.length)]!;
             const damage = this.getCounterDamage(counter.baseDamage);
-            this.enqueueText(counter.text, () => {
+            this.say(counter.text, () => {
               this.playerHp = Math.max(0, this.playerHp - damage);
               this.updateHpBars();
 
               if (this.playerHp <= 0) {
-                this.enqueueText('PEKERJA SAWIT fainted!', () => {
-                  this.state = 'lost';
-                  this.pauseTimer = 1.0;
-                  this._pendingCallback = () => {
-                    this.hide();
-                    this.eventBus.emit('OBSTACLE_HIT', { type: 'boss_battle' });
-                  };
-                });
+                this.doPlayerFainted();
               } else {
-                this.enqueueText('What will PEKERJA SAWIT do?', () => {
+                this.say('What will PEKERJA SAWIT do?', () => {
                   this.state = 'choosing';
                   this.setMovesEnabled(true);
-                });
+                }, 1.2);
               }
-            });
+            }, 1.2);
           },
+          1.0,
         );
       }
+    });
+  }
+
+  private doPlayerFainted(): void {
+    this.say('PEKERJA SAWIT fainted!', () => {
+      this.state = 'lost';
+      this.delayTimer = 1.5;
+      this.typeQueue.push({
+        text: '',
+        delay: 0,
+        onDone: () => {
+          this.hide();
+          this.eventBus.emit('OBSTACLE_HIT', { type: 'boss_battle' });
+        },
+      });
     });
   }
 
@@ -407,11 +392,20 @@ export class TurnBattle {
     this.bossHpText.textContent = `${this.bossHp}/${BOSS_HP}`;
   }
 
+  /** Remove hint-glow from ALL buttons (prevents stale glow on reshuffle) */
+  private clearAllGlow(): void {
+    for (const btn of this.moveButtons) {
+      btn.classList.remove('hint-glow');
+    }
+  }
+
   private hide(): void {
     this.state = 'idle';
     this.overlay.classList.add('hidden');
     this.dialogueEl.textContent = '';
-    this.moveButtons[this.memujiButtonIndex]?.classList.remove('hint-glow');
+    this.clearAllGlow();
+    this.typeCurrent = null;
+    this.typeQueue = [];
   }
 
   dispose(): void {

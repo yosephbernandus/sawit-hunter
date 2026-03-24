@@ -5,7 +5,7 @@ import { ObjectPool } from '../utils/ObjectPool.ts';
 import { createWowo, createMBG } from '../rendering/ModelFactory.ts';
 import type { WowoRefs } from '../rendering/ModelFactory.ts';
 
-const BOSS_DURATION = 30;
+const BOSS_DURATION = 15;
 const MBG_SPAWN_INTERVAL_START = 1.2;
 const MBG_SPAWN_INTERVAL_END = 0.4;
 const MBG_SPEED = 25; // MBGs fly toward player (positive Z direction)
