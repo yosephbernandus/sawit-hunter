@@ -8,7 +8,7 @@ export type SoundId =
   | 'powerup'
   | 'laneChange';
 
-export type MusicId = 'menu' | 'gameOver';
+export type MusicId = 'menu' | 'gameOver' | 'battle';
 
 const SOUND_DEFS: Record<SoundId, { path: string; volume: number; limit: number }> = {
   catch: { path: '/assets/sounds/kaget.mp3', volume: 0.5, limit: 2 },
@@ -19,9 +19,9 @@ const SOUND_DEFS: Record<SoundId, { path: string; volume: number; limit: number 
   laneChange: { path: '/assets/sounds/solid.mp3', volume: 0.3, limit: 1 },
 };
 
-const MUSIC_PATHS: Record<MusicId, string> = {
+const MUSIC_PATHS: Partial<Record<MusicId, string>> = {
   menu: '/assets/sounds/selamat-berjuang.mp3',
-  gameOver: '/assets/sounds/penyanyi-solo-gatau-siapa.mp3',
+  battle: '/assets/sounds/the-raising-spirit-battle.mp3',
 };
 
 const GAME_OVER_TRACKS = [
@@ -59,14 +59,16 @@ export class AudioManager {
       this.activeSfx.set(id as SoundId, []);
     }
 
-    // Menu music — html5 for streaming (reduces memory)
-    this.music.set('menu', new Howl({
-      src: [MUSIC_PATHS.menu],
-      volume: MUSIC_VOLUME,
-      loop: true,
-      preload: true,
-      html5: true,
-    }));
+    // Music tracks — html5 for streaming (reduces memory)
+    for (const [id, path] of Object.entries(MUSIC_PATHS)) {
+      this.music.set(id as MusicId, new Howl({
+        src: [path],
+        volume: MUSIC_VOLUME,
+        loop: true,
+        preload: true,
+        html5: true,
+      }));
+    }
 
     // Game over tracks — html5 for streaming
     for (const path of GAME_OVER_TRACKS) {
