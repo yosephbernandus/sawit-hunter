@@ -27,6 +27,7 @@ export class CollectibleManager {
   private spawnTimer = 0;
   private spawnAheadZ = -60;
   private elapsedTime = 0;
+  private spawnPaused = false;
 
   private pool = new ObjectPool<THREE.Group>(
     () => createSawitFruit(false),
@@ -43,10 +44,14 @@ export class CollectibleManager {
     this.scene = scene;
   }
 
+  setSpawnPaused(paused: boolean): void {
+    this.spawnPaused = paused;
+  }
+
   update(dt: number, speed: number, playerZ: number): void {
     this.spawnTimer -= dt;
 
-    if (this.spawnTimer <= 0) {
+    if (!this.spawnPaused && this.spawnTimer <= 0) {
       this.spawn(playerZ);
       this.spawnTimer = SAWIT_SPAWN_INTERVAL;
     }

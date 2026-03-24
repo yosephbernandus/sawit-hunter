@@ -234,6 +234,7 @@ export class GameScene implements IGameScene {
       if (this.inBossFight) {
         this.inBossFight = false;
         this.obstacles.setSpawnPaused(false);
+        this.collectibles.setSpawnPaused(false);
         this.collision.setSkipObstacles(false);
         this.bossBattle.dispose();
       }
@@ -272,6 +273,7 @@ export class GameScene implements IGameScene {
       this.audio.stopMusic();
       this.inBossFight = false;
       this.obstacles.setSpawnPaused(false);
+      this.collectibles.setSpawnPaused(false);
       this.collision.setSkipObstacles(false);
       this.scoreManager.addScore(bonus);
       this.nextBossDistance = this.distance + BOSS_TRIGGER_DISTANCE;
@@ -413,6 +415,7 @@ export class GameScene implements IGameScene {
     if (!this.inBossFight && this.distance >= this.nextBossDistance) {
       this.inBossFight = true;
       this.obstacles.setSpawnPaused(true);
+      this.collectibles.setSpawnPaused(true);
       this.collision.setSkipObstacles(true);
       this.bossBattle.start(this.playerMesh.position.z);
       this.showBiomeToast('SAWITO WOWOWITO THROW MBG!');
