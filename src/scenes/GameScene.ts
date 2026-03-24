@@ -262,12 +262,14 @@ export class GameScene implements IGameScene {
 
     this.eventBus.on('BOSS_DODGE_SURVIVED', () => {
       this.paused = true;
+      this.audio.playMusic('battle');
       this.turnBattle.start(this.bossEncounter);
       this.bossEncounter++;
     });
 
     this.eventBus.on('BOSS_WON', ({ bonus }) => {
       this.paused = false;
+      this.audio.stopMusic();
       this.inBossFight = false;
       this.obstacles.setSpawnPaused(false);
       this.collision.setSkipObstacles(false);
