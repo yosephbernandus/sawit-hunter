@@ -321,10 +321,9 @@ export class TurnBattle {
         this.updateHpBars();
         this.say('SUPER EFFECTIVE! WOWOWITO is flattered! Promoted to KOMISARIS!', () => {
           this.state = 'won';
-          this.delayTimer = 2.0;
           this.typeQueue.push({
             text: '',
-            delay: 0,
+            delay: 2.0,
             onDone: () => {
               this.hide();
               this.eventBus.emit('BOSS_WON', { bonus: BOSS_WIN_BONUS });
@@ -365,10 +364,9 @@ export class TurnBattle {
   private doPlayerFainted(): void {
     this.say('PEKERJA SAWIT fainted!', () => {
       this.state = 'lost';
-      this.delayTimer = 1.5;
       this.typeQueue.push({
         text: '',
-        delay: 0,
+        delay: 1.5,
         onDone: () => {
           this.hide();
           this.eventBus.emit('OBSTACLE_HIT', { type: 'boss_battle' });
