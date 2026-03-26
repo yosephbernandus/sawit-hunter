@@ -9,7 +9,8 @@ interface WrongMove {
 }
 
 const CHAR_DELAY = 0.04; // 40ms per character
-const PLAYER_MAX_HP = 100;
+const PLAYER_BASE_HP = 100;
+const PLAYER_HP_PER_ENCOUNTER = 20; // +20 HP per boss encounter
 const BOSS_HP = 999;
 const BOSS_WIN_BONUS = 500;
 
@@ -76,7 +77,8 @@ const COUNTERATTACKS = [
 export class TurnBattle {
   private eventBus: EventBus;
   private state: BattleState = 'idle';
-  private playerHp = PLAYER_MAX_HP;
+  private playerMaxHp = PLAYER_BASE_HP;
+  private playerHp = PLAYER_BASE_HP;
   private bossHp = BOSS_HP;
   private wrongMoveCount = 0;
   private encounter = 0;
@@ -137,10 +139,11 @@ export class TurnBattle {
 
     this.state = 'intro';
     this.encounter = encounterNumber;
-    this.playerHp = PLAYER_MAX_HP;
+    this.playerMaxHp = PLAYER_BASE_HP + encounterNumber * PLAYER_HP_PER_ENCOUNTER;
+    this.playerHp = this.playerMaxHp;
     this.bossHp = BOSS_HP;
     this.wrongMoveCount = 0;
-    this.praisesNeeded = Math.min(encounterNumber + 1, 3);
+    this.praisesNeeded = Math.min(encounterNumber + 1, 5);
     this.praisesGiven = 0;
 
     // Reset typewriter
@@ -278,7 +281,7 @@ export class TurnBattle {
   }
 
   private getCounterDamage(baseDamage: number): number {
-    return baseDamage + this.encounter * 5;
+    return baseDamage + this.encounter * 3;
   }
 
   private doWrongMove(idx: number): void {
@@ -379,10 +382,10 @@ export class TurnBattle {
   }
 
   private updateHpBars(): void {
-    const playerPct = Math.max(0, (this.playerHp / PLAYER_MAX_HP) * 100);
+    const playerPct = Math.max(0, (this.playerHp / this.playerMaxHp) * 100);
     const bossPct = Math.max(0, (this.bossHp / BOSS_HP) * 100);
     this.playerHpFill.style.width = `${playerPct}%`;
-    this.playerHpText.textContent = `${this.playerHp}/${PLAYER_MAX_HP}`;
+    this.playerHpText.textContent = `${this.playerHp}/${this.playerMaxHp}`;
     this.bossHpFill.style.width = `${bossPct}%`;
     this.bossHpText.textContent = `${this.bossHp}/${BOSS_HP}`;
   }
