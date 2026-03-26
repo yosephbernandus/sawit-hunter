@@ -342,17 +342,14 @@ export class TurnBattle {
             const counter = COUNTERATTACKS[Math.floor(Math.random() * COUNTERATTACKS.length)]!;
             const damage = this.getCounterDamage(counter.baseDamage);
             this.say(counter.text, () => {
-              this.playerHp = Math.max(0, this.playerHp - damage);
+              // Partial praise counterattack can't kill — keep at 1 HP minimum
+              this.playerHp = Math.max(1, this.playerHp - damage);
               this.updateHpBars();
 
-              if (this.playerHp <= 0) {
-                this.doPlayerFainted();
-              } else {
-                this.say('What will PEKERJA SAWIT do?', () => {
-                  this.state = 'choosing';
-                  this.setMovesEnabled(true);
-                }, 1.2);
-              }
+              this.say('What will PEKERJA SAWIT do?', () => {
+                this.state = 'choosing';
+                this.setMovesEnabled(true);
+              }, 1.2);
             }, 1.2);
           },
           1.0,
